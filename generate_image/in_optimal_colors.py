@@ -8,6 +8,8 @@ from typing import Tuple
 import numpy as np
 from PIL import Image, ImageFilter
 
+from parameters_reader import ParametersImageSizeInMm
+
 
 def _color_distance(c1: Tuple[int, int, int], c2: Tuple[int, int, int]) -> float:
     """
@@ -98,7 +100,12 @@ def _k_means_cluster(colors: list[Tuple[int, int, int]], k: int, max_samples: in
     return centroids
 
 
-def generate_image_in_optimal_colors(image: Image.Image, max_number_of_colors: int) -> Image.Image:
+def generate_image_in_optimal_colors(
+    image: Image.Image,
+    max_number_of_colors: int,
+    image_size_in_mm: ParametersImageSizeInMm,
+    min_region_size_in_mm: int
+) -> Image.Image:
     """
     Convert the image to use optimal colors found through k-means clustering.
 

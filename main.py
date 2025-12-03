@@ -8,18 +8,12 @@ Into the outputs it puts for each image 2 files:
 """
 
 from pathlib import Path
-import json
-from typing import Any
-
-import numpy as np
 from PIL import Image
 
+from parameters_reader import read_parameters, Parameters
 from generate_image.to_paint_by_numbers import generate_image_to_paint_by_numbers
 from generate_image.in_the_specific_colors import generate_image_in_the_specific_colors
 from generate_image.in_optimal_colors import generate_image_in_optimal_colors
-
-TO_USE_ONLY_ALLOWED_COLORS: bool = True
-MAX_NUMBER_OF_COLORS: int = 24
 
 
 def read_image(image_path: Path) -> Image.Image:
@@ -51,25 +45,37 @@ def save_image(image: Image.Image, output_dir: Path, image_name: str) -> None:
 
 
 def main() -> None:
-    allowed_colors: list[str] = []
-    if TO_USE_ONLY_ALLOWED_COLORS:
-        allowed_colors = json.load(open('allowed_colors.json'))
+    parameters: Parameters = read_parameters()
 
-    images_folder = Path('images')
-    for image_path in list(images_folder.glob('*.jpg')) + list(images_folder.glob('*.png')):
+    for image_path in parameters.get_images_to_process_paths():
         file_name: str = image_path.stem
-        output_dir = Path('outputs') / file_name
+        output_dir = Path("outputs") / file_name
 
         image = read_image(image_path)
 
-        if TO_USE_ONLY_ALLOWED_COLORS:
-            image_in_specific_colors = generate_image_in_the_specific_colors(image, allowed_colors)
+        # Generate the image in the necessary colors
+        image_in_specific_colors: Image.Image
+        if parameters.to_use_only_allowed_colors.value:
+            image_in_specific_colors = generate_image_in_the_specific_colors(
+                image,
+                parameters.to_use_only_allowed_colors.allowed_colors,
+                parameters.image_size_in_mm,
+                parameters.min_region_size_in_mm)
         else:
-            image_in_specific_colors = generate_image_in_optimal_colors(image, MAX_NUMBER_OF_COLORS)
-        save_image(image_in_specific_colors, output_dir, file_name + '_in_colors.png')
+            image_in_specific_colors = generate_image_in_optimal_colors(
+                image,
+                parameters.max_number_of_colors,
+                parameters.image_size_in_mm,
+                parameters.min_region_size_in_mm)
+        
+        # Save the image in the colors
+        save_image(image_in_specific_colors, output_dir, file_name + "_in_colors.png")
 
-        image_to_paint_by_numbers = generate_image_to_paint_by_numbers(image_in_specific_colors)
-        save_image(image_to_paint_by_numbers, output_dir, file_name + '_by_numbers.png')
+        # Generate the image to paint by the numbers
+        image_to_paint_by_numbers: Image.Image = generate_image_to_paint_by_numbers(image_in_specific_colors)
+
+        # Save the image to paint by the numbers
+        save_image(image_to_paint_by_numbers, output_dir, file_name + "_by_numbers.png")
 
 if __name__ == '__main__':
     main()

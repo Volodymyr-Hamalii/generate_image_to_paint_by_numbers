@@ -1,0 +1,54 @@
+{
+  "images_to_process": ["images/image_1.png"],
+
+  "image_size_in_mm": {
+    "width": 5000,
+    "height": 7000
+  },
+  "min_region_size_in_mm": 100,
+
+  "to_use_only_allowed_colors": {
+    "_description": "If 'value' is true, the image will be converted to use only the allowed colors. If false, 'allowed_colors' is ignored and the image will be converted to use the optimal colors with the max number of colors specified below.",
+    "value": true,
+    "allowed_colors": [
+      "#00AEC7",
+      "#66CC66",
+      "#4CBB17",
+      "#AED500",
+      "#CCD600",
+      "#FFF200",
+      "#FFC800",
+      "#FF8C00",
+      "#FF6319",
+      "#FF4433",
+      "#ED1C24",
+      "#FF486A",
+      "#FF6699",
+      "#FF3399",
+      "#EC008C",
+      "#92278F",
+      "#662D91",
+      "#3F4899",
+      "#C39D7B",
+      "#996633",
+      "#654333",
+      "#4E3444",
+      "#483D8B",
+      "#0047BB",
+      "#2962FF",
+      "#4477AA",
+      "#6699CC",
+      "#009688",
+      "#006666",
+      "#666633",
+      "#AAAAAA",
+      "#888888",
+      "#666666",
+      "#444444",
+      "#333333",
+      "#222222"
+    ]
+  },
+
+  "max_number_of_colors": 24
+}

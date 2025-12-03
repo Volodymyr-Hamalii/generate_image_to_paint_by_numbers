@@ -6,6 +6,8 @@ from typing import Tuple
 
 from PIL import Image, ImageFilter
 
+from parameters_reader import ParametersImageSizeInMm
+
 
 def _hex_to_rgb(hex_color: str) -> Tuple[int, int, int]:
     """
@@ -49,7 +51,12 @@ def _find_nearest_color(color: Tuple[int, int, int], palette: list[Tuple[int, in
     return min(palette, key=lambda c: _color_distance(c, color))
 
 
-def generate_image_in_the_specific_colors(image: Image.Image, allowed_colors: list[str]) -> Image.Image:
+def generate_image_in_the_specific_colors(
+    image: Image.Image,
+    allowed_colors: list[str],
+    image_size_in_mm: ParametersImageSizeInMm,
+    min_region_size_in_mm: int
+) -> Image.Image:
     """
     Convert the image to use only colors from the allowed colors list.
 
