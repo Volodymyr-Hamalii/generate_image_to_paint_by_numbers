@@ -6,8 +6,10 @@ import json
 
 @dataclass(frozen=True)
 class ParametersUseOnlyAllowedColors:
+    _description: str
     value: bool
     allowed_colors: list[str] = field(default_factory=list)
+
 
 @dataclass(frozen=True)
 class ParametersImageSizeInMm:
@@ -30,7 +32,7 @@ class Parameters:
 
     def get_images_to_process_paths(self) -> list[Path]:
         if self.images_to_process:
-            return [Path(image_path) for image_path in self.images_to_process]
+            return [Path(__file__).parent / image_path for image_path in self.images_to_process]
 
         # If no images are specified, get all images from the images folder
         images_folder = Path(__file__).parent / "images"
