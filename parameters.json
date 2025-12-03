@@ -7,6 +7,11 @@
   },
   "min_region_size_in_mm": 100,
 
+  "border": {
+    "width_in_mm": 0.5,
+    "color": "#000000"
+  },
+
   "to_use_only_allowed_colors": {
     "_description": "If 'value' is true, the image will be converted to use only the allowed colors. If false, 'allowed_colors' is ignored and the image will be converted to use the optimal colors with the max number of colors specified below.",
     "value": true,

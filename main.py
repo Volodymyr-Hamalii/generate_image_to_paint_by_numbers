@@ -72,7 +72,10 @@ def main() -> None:
         save_image(image_in_specific_colors, output_dir, file_name + "_in_colors.png")
 
         # Generate the image to paint by the numbers
-        image_to_paint_by_numbers: Image.Image = generate_image_to_paint_by_numbers(image_in_specific_colors)
+        image_to_paint_by_numbers: Image.Image = generate_image_to_paint_by_numbers(
+            image_in_specific_colors,
+            parameters.min_region_size_in_mm,
+            parameters.border)
 
         # Save the image to paint by the numbers
         save_image(image_to_paint_by_numbers, output_dir, file_name + "_by_numbers.png")

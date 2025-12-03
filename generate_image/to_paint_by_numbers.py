@@ -8,6 +8,8 @@ from typing import Tuple, Set, Dict
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
+from parameters_reader import ParametersBorder
+
 
 def _flood_fill_region(
     label_image: np.ndarray,
@@ -187,7 +189,11 @@ def _merge_small_regions(
     return [regions[i] for i in range(len(regions)) if not merged[i]]
 
 
-def generate_image_to_paint_by_numbers(image: Image.Image, min_region_size: int = 100) -> Image.Image:
+def generate_image_to_paint_by_numbers(
+    image: Image.Image,
+    min_region_size_in_mm: int,
+    border: ParametersBorder,
+) -> Image.Image:
     """
     Convert a color-reduced image to a B&W paint-by-numbers template.
 

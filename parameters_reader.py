@@ -15,11 +15,17 @@ class ParametersImageSizeInMm:
     height: int
 
 @dataclass(frozen=True)
+class ParametersBorder:
+    width_in_mm: int
+    color: str
+
+@dataclass(frozen=True)
 class Parameters:
     images_to_process: list[str]
     to_use_only_allowed_colors: ParametersUseOnlyAllowedColors
     max_number_of_colors: int
     image_size_in_mm: ParametersImageSizeInMm
+    border: ParametersBorder
     min_region_size_in_mm: int
 
     def get_images_to_process_paths(self) -> list[Path]:
@@ -40,8 +46,10 @@ def read_parameters() -> Parameters:
         parameters = json.load(f)
         return Parameters(
             images_to_process=parameters["images_to_process"],
-            to_use_only_allowed_colors=ParametersUseOnlyAllowedColors(**parameters["to_use_only_allowed_colors"]),
-            max_number_of_colors=parameters["max_number_of_colors"],
             image_size_in_mm=ParametersImageSizeInMm(**parameters["image_size_in_mm"]),
-            min_region_size_in_mm=parameters["min_region_size_in_mm"]
+            min_region_size_in_mm=parameters["min_region_size_in_mm"],
+            border=ParametersBorder(**parameters["border"]),
+            to_use_only_allowed_colors=ParametersUseOnlyAllowedColors(
+                **parameters["to_use_only_allowed_colors"]),
+            max_number_of_colors=parameters["max_number_of_colors"],
         )
