@@ -48,37 +48,46 @@ def main() -> None:
     parameters: Parameters = read_parameters()
 
     for image_path in parameters.get_images_to_process_paths():
+        print(f"\nProcessing image: {image_path}")
+
         file_name: str = image_path.stem
-        output_dir = Path("outputs") / file_name
+        output_dir = Path(__file__).parent / "outputs" / file_name
 
         image = read_image(image_path)
 
         # Generate the image in the necessary colors
         image_in_specific_colors: Image.Image
         if parameters.to_use_only_allowed_colors.value:
+            print(f"Generating image in the specific colors...")
             image_in_specific_colors = generate_image_in_the_specific_colors(
                 image,
                 parameters.to_use_only_allowed_colors.allowed_colors,
                 parameters.image_size_in_mm,
                 parameters.min_region_size_in_mm)
         else:
+            print(f"Generating image in the optimal colors...")
             image_in_specific_colors = generate_image_in_optimal_colors(
                 image,
                 parameters.max_number_of_colors,
                 parameters.image_size_in_mm,
                 parameters.min_region_size_in_mm)
         
-        # Save the image in the colors
+        print(f"Image in the colors generated. Saving...")
         save_image(image_in_specific_colors, output_dir, file_name + "_in_colors.png")
 
-        # Generate the image to paint by the numbers
+        print(f"Generating image to paint by the numbers...")
         image_to_paint_by_numbers: Image.Image = generate_image_to_paint_by_numbers(
             image_in_specific_colors,
             parameters.min_region_size_in_mm,
             parameters.border)
 
         # Save the image to paint by the numbers
+        print(f"Image to paint by the numbers generated. Saving...")
         save_image(image_to_paint_by_numbers, output_dir, file_name + "_by_numbers.png")
+
+        print(f"Image {image_path.name} processing completed!")
+    
+    print(f"All images processed!")
 
 if __name__ == '__main__':
     main()
