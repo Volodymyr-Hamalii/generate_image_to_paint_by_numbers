@@ -2,13 +2,13 @@
   "images_to_process": ["images/image_1.png"],
 
   "image_size_in_mm": {
-    "width": 5000,
-    "height": 7000
+    "width": 2500,
+    "height": 3000
   },
   "min_region_size_in_mm": 100,
 
   "border": {
-    "width_in_mm": 0.5,
+    "width_in_mm": 0.25,
     "color": "#000000"
   },
 

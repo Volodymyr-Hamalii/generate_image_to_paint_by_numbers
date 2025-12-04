@@ -8,6 +8,7 @@ import numpy as np
 from PIL import Image, ImageFilter
 
 from parameters_reader import ParametersImageSizeInMm
+from generate_image.utils import merge_small_regions
 
 
 def _hex_to_rgb(hex_color: str) -> Tuple[int, int, int]:
@@ -143,4 +144,9 @@ def generate_image_in_the_specific_colors(
     image = Image.fromarray(img_array, 'RGB')
 
     print(f"  Color conversion complete!")
+
+    # Merge small regions to create larger paintable areas
+    min_region_size_in_pixels = int(min_region_size_in_mm * PIXELS_PER_MM)
+    image = merge_small_regions(image, min_region_size_in_pixels)
+
     return image

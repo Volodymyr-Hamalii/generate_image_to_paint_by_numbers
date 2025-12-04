@@ -9,54 +9,15 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
 from parameters_reader import ParametersBorder
+from generate_image.utils import flood_fill_region
 
 
-def _flood_fill_region(
-    label_image: np.ndarray,
-    start_x: int,
-    start_y: int,
-    visited: np.ndarray,
-    width: int,
-    height: int
-) -> Set[Tuple[int, int]]:
-    """
-    Use flood fill to find all connected pixels of the same color.
-
-    Args:
-        label_image: 2D array of color labels
-        start_x: Starting x coordinate
-        start_y: Starting y coordinate
-        visited: 2D array tracking visited pixels
-        width: Image width
-        height: Image height
-
-    Returns:
-        Set of (x, y) coordinates belonging to this region
-    """
-    region = set()
-    stack = [(start_x, start_y)]
-    target_label = label_image[start_y, start_x]
-
-    while stack:
-        x, y = stack.pop()
-
-        if x < 0 or x >= width or y < 0 or y >= height:
-            continue
-        if visited[y, x]:
-            continue
-        if label_image[y, x] != target_label:
-            continue
-
-        visited[y, x] = True
-        region.add((x, y))
-
-        # Add neighbors
-        stack.append((x + 1, y))
-        stack.append((x - 1, y))
-        stack.append((x, y + 1))
-        stack.append((x, y - 1))
-
-    return region
+# Font size constraints in mm (2 pixels per mm to match the color conversion)
+PIXELS_PER_MM = 2
+MIN_FONT_SIZE_MM = 8
+MAX_FONT_SIZE_MM = 14
+MIN_FONT_SIZE_PIXELS = int(MIN_FONT_SIZE_MM * PIXELS_PER_MM)
+MAX_FONT_SIZE_PIXELS = int(MAX_FONT_SIZE_MM * PIXELS_PER_MM)
 
 
 def _create_border_image(regions: list[Set[Tuple[int, int]]], width: int, height: int) -> np.ndarray:
@@ -128,67 +89,6 @@ def _find_label_center(region: Set[Tuple[int, int]], border: np.ndarray, width: 
     return best_pixel
 
 
-def _merge_small_regions(
-    regions: list[Set[Tuple[int, int]]],
-    label_image: np.ndarray,
-    width: int,
-    height: int,
-    min_region_size: int
-) -> list[Set[Tuple[int, int]]]:
-    """
-    Merge small regions with their neighbors to create larger paintable areas.
-
-    Args:
-        regions: List of region sets
-        label_image: 2D array of color labels
-        width: Image width
-        height: Image height
-        min_region_size: Minimum size for a region (smaller ones will be merged)
-
-    Returns:
-        List of merged regions
-    """
-    # Sort regions by size (smallest first for merging)
-    regions = sorted(regions, key=len)
-
-    # Create a region map for quick neighbor lookup
-    region_map = {}
-    for idx, region in enumerate(regions):
-        for pixel in region:
-            region_map[pixel] = idx
-
-    merged = [False] * len(regions)
-
-    for idx in range(len(regions)):
-        if merged[idx] or len(regions[idx]) >= min_region_size:
-            continue
-
-        # Find neighboring regions
-        neighbors = set()
-        for x, y in regions[idx]:
-            for dx, dy in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
-                nx, ny = x + dx, y + dy
-                if 0 <= nx < width and 0 <= ny < height:
-                    neighbor_pixel = (nx, ny)
-                    if neighbor_pixel in region_map:
-                        neighbor_idx = region_map[neighbor_pixel]
-                        if neighbor_idx != idx and not merged[neighbor_idx]:
-                            neighbors.add(neighbor_idx)
-
-        if neighbors:
-            # Merge with the largest neighbor
-            target_idx = max(neighbors, key=lambda i: len(regions[i]))
-            regions[target_idx] = regions[target_idx].union(regions[idx])
-            merged[idx] = True
-
-            # Update region map
-            for pixel in regions[idx]:
-                region_map[pixel] = target_idx
-
-    # Return only non-merged regions
-    return [regions[i] for i in range(len(regions)) if not merged[i]]
-
-
 def generate_image_to_paint_by_numbers(
     image: Image.Image,
     min_region_size_in_mm: int,
@@ -198,15 +98,14 @@ def generate_image_to_paint_by_numbers(
     Convert a color-reduced image to a B&W paint-by-numbers template.
 
     The function:
-    1. Segments the image into regions of the same color
-    2. Merges small regions to create larger paintable areas
-    3. Creates a color-to-label mapping
-    4. Draws borders between regions
-    5. Places numeric labels in each region
+    1. Segments the image into regions of the same color (regions are already merged from color processing)
+    2. Creates a color-to-label mapping
+    3. Draws borders between regions
+    4. Places numeric labels in each region
 
     Args:
-        image: Input PIL Image with reduced color palette
-        min_region_size_in_mm: Minimum size for regions in millimeters (smaller ones get merged)
+        image: Input PIL Image with reduced color palette (regions already merged)
+        min_region_size_in_mm: Not used (kept for interface compatibility)
         border_params: Border configuration (width in mm and color)
 
     Returns:
@@ -215,10 +114,8 @@ def generate_image_to_paint_by_numbers(
     width, height = image.size
     pixels = image.load()
 
-    # Convert min_region_size from mm to pixels (2 pixels per mm to match the color conversion)
-    PIXELS_PER_MM = 2
-    min_region_size_in_pixels = int(min_region_size_in_mm * PIXELS_PER_MM)
-    print(f"  Minimum region size: {min_region_size_in_pixels} pixels ({min_region_size_in_mm}mm)")
+    if pixels is None:
+        raise ValueError("Image pixels are None")
 
     # Create label image mapping each unique color to a number
     print(f"  Creating color label map...")
@@ -234,7 +131,7 @@ def generate_image_to_paint_by_numbers(
 
     print(f"  Found {len(unique_colors)} unique colors")
 
-    # Segment image into regions using flood fill
+    # Segment image into regions using flood fill (regions already merged)
     print(f"  Segmenting image into regions using flood fill...")
     visited = np.zeros((height, width), dtype=bool)
     regions = []
@@ -242,16 +139,11 @@ def generate_image_to_paint_by_numbers(
     for y in range(height):
         for x in range(width):
             if not visited[y, x]:
-                region = _flood_fill_region(label_image, x, y, visited, width, height)
+                region = flood_fill_region(label_image, x, y, visited, width, height)
                 if region:
                     regions.append(region)
 
-    print(f"  Found {len(regions)} initial regions")
-
-    # Merge small regions to create larger paintable areas
-    print(f"  Merging small regions (min size: {min_region_size_in_pixels} pixels)...")
-    regions = _merge_small_regions(regions, label_image, width, height, min_region_size_in_pixels)
-    print(f"  After merging: {len(regions)} regions")
+    print(f"  Found {len(regions)} regions")
 
     # Create border image
     print(f"  Creating borders between regions...")
@@ -261,41 +153,39 @@ def generate_image_to_paint_by_numbers(
     output = Image.new('RGB', (width, height), 'white')
     draw = ImageDraw.Draw(output)
 
-    # Calculate border width in pixels
-    border_width_in_pixels = max(1, int(border_params.width_in_mm * PIXELS_PER_MM))
-    print(f"  Drawing borders (width: {border_width_in_pixels} pixels, color: {border_params.color})...")
-
-    # Draw borders with the specified color and width
+    # Draw single-pixel borders for cleaner lines
+    print(f"  Drawing borders (single pixel, color: {border_params.color})...")
     for y in range(height):
         for x in range(width):
             if border_image[y, x] == 1:
-                # Draw border with specified width
-                for dx in range(-border_width_in_pixels // 2, border_width_in_pixels // 2 + 1):
-                    for dy in range(-border_width_in_pixels // 2, border_width_in_pixels // 2 + 1):
-                        nx, ny = x + dx, y + dy
-                        if 0 <= nx < width and 0 <= ny < height:
-                            draw.point((nx, ny), fill=border_params.color)
+                draw.point((x, y), fill=border_params.color)
 
-    # Try to load a font with appropriate size based on image dimensions
-    font_size = max(8, min(width, height) // 50)  # Dynamic font size based on image size
-    try:
-        # Try different font paths
-        font = None
-        for font_name in ['arial.ttf', 'Arial.ttf', '/System/Library/Fonts/Helvetica.ttc',
-                        '/System/Library/Fonts/Supplemental/Arial.ttf',
-                        '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf']:
+    print(f"  Placing numeric labels in {len(regions)} regions (font: {MIN_FONT_SIZE_MM}-{MAX_FONT_SIZE_MM}mm)...")
+
+    # Cache fonts of different sizes
+    font_cache = {}
+
+    def get_font(size: int):
+        if size not in font_cache:
             try:
-                font = ImageFont.truetype(font_name, font_size)
-                break
+                # Try different font paths
+                font = None
+                for font_name in ['arial.ttf', 'Arial.ttf', '/System/Library/Fonts/Helvetica.ttc',
+                                '/System/Library/Fonts/Supplemental/Arial.ttf',
+                                '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf']:
+                    try:
+                        font = ImageFont.truetype(font_name, size)
+                        break
+                    except:
+                        continue
+                if not font:
+                    font = ImageFont.load_default()
+                font_cache[size] = font
             except:
-                continue
-        if not font:
-            font = ImageFont.load_default()
-    except:
-        font = ImageFont.load_default()
+                font_cache[size] = ImageFont.load_default()
+        return font_cache[size]
 
     # Place labels in regions
-    print(f"  Placing numeric labels in {len(regions)} regions...")
     for region in regions:
         if not region:
             continue
@@ -303,6 +193,17 @@ def generate_image_to_paint_by_numbers(
         # Get label for this region
         sample_x, sample_y = next(iter(region))
         label = label_image[sample_y, sample_x]
+
+        # Calculate font size based on region area
+        region_area = len(region)
+        # Scale font size based on square root of area (to match region diameter)
+        region_diameter = (region_area ** 0.5)
+        font_size = int(MIN_FONT_SIZE_PIXELS + (MAX_FONT_SIZE_PIXELS - MIN_FONT_SIZE_PIXELS) *
+                       min(1.0, region_diameter / 500))  # 500 pixels diameter for max font size
+        font_size = max(MIN_FONT_SIZE_PIXELS, min(MAX_FONT_SIZE_PIXELS, font_size))
+
+        # Get font for this size
+        font = get_font(font_size)
 
         # Find good position for label (centered in the region)
         label_x, label_y = _find_label_center(region, border_image, width, height)
