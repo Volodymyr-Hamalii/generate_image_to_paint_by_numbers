@@ -44,7 +44,6 @@ def get_output_dir(file_name: str) -> Path:
         dir_name = f"{file_name}-{i}" if i else file_name
         output_dir = Path(__file__).parent / "outputs" / dir_name
         if not output_dir.exists():
-            output_dir.mkdir(parents=True, exist_ok=True)
             return output_dir
     raise ValueError(f"Output directory for {file_name} not found")
 
@@ -92,6 +91,7 @@ def main() -> None:
                 parameters.min_region_size_in_mm)
         
         print(f"Image in the colors generated. Saving...")
+        output_dir.mkdir(parents=True, exist_ok=True)
         save_image(image_in_specific_colors, output_dir, file_name + "_in_colors.png")
 
         print(f"Generating image to paint by the numbers...")
