@@ -110,40 +110,86 @@ def generate_image_in_optimal_colors(
     Convert the image to use optimal colors found through k-means clustering.
 
     The function:
-    1. Extracts all unique colors from the image
-    2. Uses k-means clustering to find the most representative colors
-    3. Maps each pixel to the nearest cluster color
-    4. Applies median filtering to smooth the result
+    1. Resizes the image to the specified size in mm (assuming 3 pixels per mm)
+    2. Extracts all unique colors from the image
+    3. Uses k-means clustering to find the most representative colors
+    4. Maps each pixel to the nearest cluster color
+    5. Applies median filtering to smooth the result
 
     Args:
         image: Input PIL Image in RGB mode
         max_number_of_colors: Maximum number of colors to use in the output
+        image_size_in_mm: Target image size in millimeters
+        min_region_size_in_mm: Minimum region size in millimeters (used for filter size)
 
     Returns:
         PIL Image with reduced color palette
     """
-    # Get image size and pixels
-    width, height = image.size
-    pixels = image.load()
+    # Resize image to specified dimensions (2 pixels per mm for manageable file size)
+    PIXELS_PER_MM = 2
+    target_width = image_size_in_mm.width * PIXELS_PER_MM
+    target_height = image_size_in_mm.height * PIXELS_PER_MM
+    print(f"  Resizing image to {target_width} x {target_height} pixels ({PIXELS_PER_MM} pixels/mm)")
+    image = image.resize((target_width, target_height), Image.Resampling.LANCZOS)
 
-    # Collect all colors
-    all_coords = [(x, y) for x in range(width) for y in range(height)]
-    all_colors = [pixels[x, y] for x, y in all_coords]
+    # Convert image to numpy array for faster processing
+    print(f"  Collecting colors from {image.width * image.height:,} pixels...")
+    img_array = np.array(image)
+    pixels_flat = img_array.reshape(-1, 3)
+    all_colors = [tuple(p) for p in pixels_flat.tolist()]
 
     # Find optimal palette using k-means clustering
+    print(f"  Finding {max_number_of_colors} optimal colors using k-means clustering...")
     palette = _k_means_cluster(all_colors, max_number_of_colors)
+    palette_array = np.array(palette)
+    print(f"  Found {len(palette)} colors")
 
-    # Map each pixel to nearest palette color
-    for x, y in all_coords:
-        pixels[x, y] = _find_nearest_color(pixels[x, y], palette)
+    # Map each pixel to nearest palette color using batch processing
+    print(f"  Mapping pixels to nearest colors...")
+    batch_size = 100000  # Process 100k pixels at a time
+    nearest_indices = np.zeros(len(pixels_flat), dtype=np.int32)
+
+    for i in range(0, len(pixels_flat), batch_size):
+        end_idx = min(i + batch_size, len(pixels_flat))
+        batch = pixels_flat[i:end_idx]
+        distances = np.sum((batch[:, np.newaxis, :] - palette_array[np.newaxis, :, :]) ** 2, axis=2)
+        nearest_indices[i:end_idx] = np.argmin(distances, axis=1)
+
+        if (i // batch_size) % 10 == 0:
+            progress = 100 * end_idx // len(pixels_flat)
+            print(f"    Progress: {progress}%")
+
+    img_array = palette_array[nearest_indices].reshape(img_array.shape).astype(np.uint8)
+    image = Image.fromarray(img_array, 'RGB')
+
+    # Calculate filter size based on min_region_size_in_mm
+    filter_size = max(3, int(min_region_size_in_mm * PIXELS_PER_MM * 0.03))
+    if filter_size % 2 == 0:
+        filter_size += 1  # MedianFilter requires odd size
 
     # Apply median filter to smooth colors and reduce noise
-    median_filter = ImageFilter.MedianFilter(size=3)
+    print(f"  Applying median filter (size={filter_size}) to smooth colors...")
+    median_filter = ImageFilter.MedianFilter(size=filter_size)
     image = image.filter(median_filter)
-    pixels = image.load()
 
     # Re-apply palette mapping after filtering
-    for x, y in all_coords:
-        pixels[x, y] = _find_nearest_color(pixels[x, y], palette)
+    print(f"  Re-mapping pixels after filtering...")
+    img_array = np.array(image)
+    pixels_flat = img_array.reshape(-1, 3)
+    nearest_indices = np.zeros(len(pixels_flat), dtype=np.int32)
 
+    for i in range(0, len(pixels_flat), batch_size):
+        end_idx = min(i + batch_size, len(pixels_flat))
+        batch = pixels_flat[i:end_idx]
+        distances = np.sum((batch[:, np.newaxis, :] - palette_array[np.newaxis, :, :]) ** 2, axis=2)
+        nearest_indices[i:end_idx] = np.argmin(distances, axis=1)
+
+        if (i // batch_size) % 10 == 0:
+            progress = 100 * end_idx // len(pixels_flat)
+            print(f"    Progress: {progress}%")
+
+    img_array = palette_array[nearest_indices].reshape(img_array.shape).astype(np.uint8)
+    image = Image.fromarray(img_array, 'RGB')
+
+    print(f"  Color conversion complete!")
     return image

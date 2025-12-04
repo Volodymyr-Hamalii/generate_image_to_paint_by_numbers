@@ -29,6 +29,26 @@ def read_image(image_path: Path) -> Image.Image:
     image = Image.open(image_path)
     return image.convert('RGB')
 
+
+def get_output_dir(file_name: str) -> Path:
+    """
+    Get the output directory for the given file name.
+
+    Args:
+        file_name: Name of the file
+
+    Returns:
+        Output directory
+    """
+    for i in range(999):
+        dir_name = f"{file_name}-{i}" if i else file_name
+        output_dir = Path(__file__).parent / "outputs" / dir_name
+        if not output_dir.exists():
+            output_dir.mkdir(parents=True, exist_ok=True)
+            return output_dir
+    raise ValueError(f"Output directory for {file_name} not found")
+
+
 def save_image(image: Image.Image, output_dir: Path, image_name: str) -> None:
     """
     Save an image to the outputs directory.
@@ -38,10 +58,9 @@ def save_image(image: Image.Image, output_dir: Path, image_name: str) -> None:
         output_dir: Directory to save the image
         image_name: Name of the file (should include extension)
     """
-    output_dir.mkdir(parents=True, exist_ok=True)
     path = output_dir / image_name
     image.save(path)
-    print(f"Saved image to {path}")
+    print(f"> Saved image to {path}")
 
 
 def main() -> None:
@@ -51,7 +70,7 @@ def main() -> None:
         print(f"\nProcessing image: {image_path}")
 
         file_name: str = image_path.stem
-        output_dir = Path(__file__).parent / "outputs" / file_name
+        output_dir = get_output_dir(file_name)
 
         image = read_image(image_path)
 
