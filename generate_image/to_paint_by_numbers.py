@@ -2,9 +2,6 @@
 Module for converting color-reduced images to paint-by-numbers templates.
 """
 
-import random
-from typing import Tuple, Set, Dict
-
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
@@ -16,7 +13,7 @@ from generate_image.utils import flood_fill_region
 PIXELS_PER_MM = 2
 
 
-def _create_border_image(regions: list[Set[Tuple[int, int]]], width: int, height: int) -> np.ndarray:
+def _create_border_image(regions: list[set[tuple[int, int]]], width: int, height: int) -> np.ndarray:
     """
     Create a binary image with borders between regions.
 
@@ -50,7 +47,7 @@ def _create_border_image(regions: list[Set[Tuple[int, int]]], width: int, height
     return border
 
 
-def _find_label_center(region: Set[Tuple[int, int]], border: np.ndarray, width: int, height: int) -> Tuple[int, int]:
+def _find_label_center(region: set[tuple[int, int]], border: np.ndarray, width: int, height: int) -> tuple[int, int]:
     """
     Find the best position to place a label in a region (as central as possible).
 

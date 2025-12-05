@@ -3,9 +3,12 @@ Utility functions shared across image generation modules.
 """
 
 import math
-from typing import Tuple, Set, Dict
 import numpy as np
 from PIL import Image
+
+
+COMPACTNESS_THRESHOLD = 25
+MAX_AREA_FOR_COMPACTNESS_CHECK = 1000  # Don't merge very large regions even if not compact
 
 
 def flood_fill_region(
@@ -15,7 +18,7 @@ def flood_fill_region(
     visited: np.ndarray,
     width: int,
     height: int
-) -> Set[Tuple[int, int]]:
+) -> set[tuple[int, int]]:
     """
     Use flood fill to find all connected pixels of the same color.
 
@@ -57,8 +60,8 @@ def flood_fill_region(
 
 
 def _calculate_region_compactness(
-    region: Set[Tuple[int, int]],
-    region_map: Dict[Tuple[int, int], int],
+    region: set[tuple[int, int]],
+    region_map: dict[tuple[int, int], int],
     region_idx: int,
     width: int,
     height: int,
@@ -204,7 +207,7 @@ def merge_small_regions(
     print(f"  After size-based merging: {len(final_regions)} regions")
 
     # Second pass: Merge thin/elongated regions based on compactness
-    print(f"  Merging thin/elongated regions (compactness threshold: 0.15)...")
+    print(f"  Merging thin/elongated regions (compactness threshold: {COMPACTNESS_THRESHOLD})...")
 
     # Rebuild regions list and region_map after size-based merging
     regions = final_regions
@@ -214,8 +217,6 @@ def merge_small_regions(
             region_map[pixel] = idx
 
     merged = [False] * len(regions)
-    COMPACTNESS_THRESHOLD = 25
-    MAX_AREA_FOR_COMPACTNESS_CHECK = 1000  # Don't merge very large regions even if not compact
 
     for idx in range(len(regions)):
         if merged[idx]:

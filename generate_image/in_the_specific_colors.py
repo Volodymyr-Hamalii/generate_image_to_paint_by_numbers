@@ -2,7 +2,6 @@
 Module for converting images to use only specific allowed colors.
 """
 
-from typing import Tuple
 
 import numpy as np
 from PIL import Image, ImageFilter
@@ -11,7 +10,7 @@ from parameters_reader import ParametersImageSizeInMm
 from generate_image.utils import merge_small_regions
 
 
-def _hex_to_rgb(hex_color: str) -> Tuple[int, int, int]:
+def _hex_to_rgb(hex_color: str) -> tuple[int, ...]:
     """
     Convert hex color string to RGB tuple.
 
@@ -25,7 +24,7 @@ def _hex_to_rgb(hex_color: str) -> Tuple[int, int, int]:
     return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
 
 
-def _color_distance(c1: Tuple[int, int, int], c2: Tuple[int, int, int]) -> float:
+def _color_distance(c1: tuple[int, int, int], c2: tuple[int, int, int]) -> float:
     """
     Calculate Euclidean distance between two RGB colors.
 
@@ -39,7 +38,7 @@ def _color_distance(c1: Tuple[int, int, int], c2: Tuple[int, int, int]) -> float
     return (c1[0] - c2[0]) ** 2 + (c1[1] - c2[1]) ** 2 + (c1[2] - c2[2]) ** 2
 
 
-def _find_nearest_color(color: Tuple[int, int, int], palette: list[Tuple[int, int, int]]) -> Tuple[int, int, int]:
+def _find_nearest_color(color: tuple[int, int, int], palette: list[tuple[int, int, int]]) -> tuple[int, int, int]:
     """
     Find the nearest color in the palette to the given color.
 
