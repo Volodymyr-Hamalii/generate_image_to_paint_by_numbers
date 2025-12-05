@@ -8,16 +8,12 @@ from typing import Tuple, Set, Dict
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
-from parameters_reader import ParametersBorder
+from parameters_reader import ParametersBorder, ParametersNumbers
 from generate_image.utils import flood_fill_region
 
 
 # Font size constraints in mm (2 pixels per mm to match the color conversion)
 PIXELS_PER_MM = 2
-MIN_FONT_SIZE_MM = 8
-MAX_FONT_SIZE_MM = 14
-MIN_FONT_SIZE_PIXELS = int(MIN_FONT_SIZE_MM * PIXELS_PER_MM)
-MAX_FONT_SIZE_PIXELS = int(MAX_FONT_SIZE_MM * PIXELS_PER_MM)
 
 
 def _create_border_image(regions: list[Set[Tuple[int, int]]], width: int, height: int) -> np.ndarray:
@@ -91,8 +87,8 @@ def _find_label_center(region: Set[Tuple[int, int]], border: np.ndarray, width: 
 
 def generate_image_to_paint_by_numbers(
     image: Image.Image,
-    min_region_size_in_mm: int,
     border_params: ParametersBorder,
+    numbers_params: ParametersNumbers,
 ) -> Image.Image:
     """
     Convert a color-reduced image to a B&W paint-by-numbers template.
@@ -105,8 +101,8 @@ def generate_image_to_paint_by_numbers(
 
     Args:
         image: Input PIL Image with reduced color palette (regions already merged)
-        min_region_size_in_mm: Not used (kept for interface compatibility)
         border_params: Border configuration (width in mm and color)
+        numbers_params: Numbers configuration (color)
 
     Returns:
         PIL Image in RGB mode with borders and color numbers on white background
@@ -116,6 +112,10 @@ def generate_image_to_paint_by_numbers(
 
     if pixels is None:
         raise ValueError("Image pixels are None")
+
+
+    min_font_size_pixels = int(numbers_params.font_size_in_mm.min * PIXELS_PER_MM)
+    max_font_size_pixels = int(numbers_params.font_size_in_mm.max * PIXELS_PER_MM)
 
     # Create label image mapping each unique color to a number
     print(f"  Creating color label map...")
@@ -160,7 +160,8 @@ def generate_image_to_paint_by_numbers(
             if border_image[y, x] == 1:
                 draw.point((x, y), fill=border_params.color)
 
-    print(f"  Placing numeric labels in {len(regions)} regions (font: {MIN_FONT_SIZE_MM}-{MAX_FONT_SIZE_MM}mm)...")
+    print(f"  Placing numeric labels in {len(regions)} regions "
+    f"(font: {numbers_params.font_size_in_mm.min}-{numbers_params.font_size_in_mm.max}mm)...")
 
     # Cache fonts of different sizes
     font_cache = {}
@@ -198,9 +199,9 @@ def generate_image_to_paint_by_numbers(
         region_area = len(region)
         # Scale font size based on square root of area (to match region diameter)
         region_diameter = (region_area ** 0.5)
-        font_size = int(MIN_FONT_SIZE_PIXELS + (MAX_FONT_SIZE_PIXELS - MIN_FONT_SIZE_PIXELS) *
+        font_size = int(min_font_size_pixels + (max_font_size_pixels - min_font_size_pixels) *
                        min(1.0, region_diameter / 500))  # 500 pixels diameter for max font size
-        font_size = max(MIN_FONT_SIZE_PIXELS, min(MAX_FONT_SIZE_PIXELS, font_size))
+        font_size = max(min_font_size_pixels, min(max_font_size_pixels, font_size))
 
         # Get font for this size
         font = get_font(font_size)
@@ -219,7 +220,7 @@ def generate_image_to_paint_by_numbers(
         final_x = label_x - text_width // 2
         final_y = label_y - text_height // 2
 
-        draw.text((final_x, final_y), text, font=font, fill='black')
+        draw.text((final_x, final_y), text, font=font, fill=numbers_params.color)
 
     print(f"  Paint-by-numbers template complete!")
     return output

@@ -97,16 +97,16 @@ def main() -> None:
         print(f"Generating image to paint by the numbers...")
         image_to_paint_by_numbers: Image.Image = generate_image_to_paint_by_numbers(
             image_in_specific_colors,
-            parameters.min_region_size_in_mm,
-            parameters.border)
+            parameters.border,
+            parameters.numbers,
+        )
 
         # Save the image to paint by the numbers
         print(f"Image to paint by the numbers generated. Saving...")
         save_image(image_to_paint_by_numbers, output_dir, file_name + "_by_numbers.png")
 
         print(f"Image {image_path.name} processing completed!")
-    
-    print(f"All images processed!")
+
 
 if __name__ == '__main__':
     main()

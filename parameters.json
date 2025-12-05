@@ -9,7 +9,14 @@
 
   "border": {
     "width_in_mm": 0.25,
-    "color": "#000000"
+    "color": "#AAAAAA"
+  },
+  "numbers": {
+    "color": "#444444",
+    "font_size_in_mm": {
+      "min": 8,
+      "max": 14
+    }
   },
 
   "to_use_only_allowed_colors": {

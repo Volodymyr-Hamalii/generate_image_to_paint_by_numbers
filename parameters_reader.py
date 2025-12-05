@@ -21,6 +21,17 @@ class ParametersBorder:
     width_in_mm: int
     color: str
 
+
+@dataclass(frozen=True)
+class ParametersNumbersFontSizeInMm:
+    min: int
+    max: int
+
+@dataclass(frozen=True)
+class ParametersNumbers:
+    color: str
+    font_size_in_mm: ParametersNumbersFontSizeInMm
+
 @dataclass(frozen=True)
 class Parameters:
     images_to_process: list[str]
@@ -28,6 +39,7 @@ class Parameters:
     max_number_of_colors: int
     image_size_in_mm: ParametersImageSizeInMm
     border: ParametersBorder
+    numbers: ParametersNumbers
     min_region_size_in_mm: int
 
     def get_images_to_process_paths(self) -> list[Path]:
@@ -54,4 +66,9 @@ def read_parameters() -> Parameters:
             to_use_only_allowed_colors=ParametersUseOnlyAllowedColors(
                 **parameters["to_use_only_allowed_colors"]),
             max_number_of_colors=parameters["max_number_of_colors"],
+            numbers=ParametersNumbers(
+                color=parameters["numbers"]["color"],
+                font_size_in_mm=ParametersNumbersFontSizeInMm(
+                    **parameters["numbers"]["font_size_in_mm"]),
+            ),
         )
