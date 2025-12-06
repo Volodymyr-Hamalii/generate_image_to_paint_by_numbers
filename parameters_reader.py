@@ -8,7 +8,6 @@ from utils.logger import logger
 
 @dataclass(frozen=True)
 class ParametersUseOnlyAllowedColors:
-    _description: str
     value: bool
     allowed_colors: list[str] = field(default_factory=list)
 
@@ -73,15 +72,25 @@ def read_parameters() -> Parameters:
         parameters = json.load(f)
         return Parameters(
             images_to_process=parameters["images_to_process"],
-            image_size_in_mm=ParametersImageSizeInMm(**parameters["image_size_in_mm"]),
+            image_size_in_mm=ParametersImageSizeInMm(
+                width=parameters["image_size_in_mm"]["width"],
+                height=parameters["image_size_in_mm"]["height"],
+            ),
             min_region_size_in_mm=parameters["min_region_size_in_mm"],
-            border=ParametersBorder(**parameters["border"]),
+            border=ParametersBorder(
+                width_in_mm=parameters["border"]["width_in_mm"],
+                color=parameters["border"]["color"],
+            ),
             to_use_only_allowed_colors=ParametersUseOnlyAllowedColors(
-                **parameters["to_use_only_allowed_colors"]),
+                value=parameters["to_use_only_allowed_colors"]["value"],
+                allowed_colors=parameters["to_use_only_allowed_colors"]["allowed_colors"],
+            ),
             max_number_of_colors=parameters["max_number_of_colors"],
             numbers=ParametersNumbers(
                 color=parameters["numbers"]["color"],
                 font_size_in_mm=ParametersNumbersFontSizeInMm(
-                    **parameters["numbers"]["font_size_in_mm"]),
+                    min=parameters["numbers"]["font_size_in_mm"]["min"],
+                    max=parameters["numbers"]["font_size_in_mm"]["max"],
+                ),
             ),
         )

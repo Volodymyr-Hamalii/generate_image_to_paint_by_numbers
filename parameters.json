@@ -12,7 +12,7 @@
     "color": "#AAAAAA"
   },
   "numbers": {
-    "color": "#444444",
+    "color": "#AAAAAA",
     "font_size_in_mm": {
       "min": 8,
       "max": 14
