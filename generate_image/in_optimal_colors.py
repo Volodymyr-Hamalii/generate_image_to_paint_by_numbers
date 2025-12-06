@@ -12,18 +12,75 @@ from parameters_reader import ParametersImageSizeInMm
 from generate_image.utils import merge_small_regions
 
 
+def _rgb_to_lab(rgb: tuple[int, int, int]) -> tuple[float, float, float]:
+    """
+    Convert RGB to LAB color space for perceptually uniform color comparison.
+
+    Args:
+        rgb: RGB tuple (R, G, B) with values 0-255
+
+    Returns:
+        LAB tuple (L, a, b)
+    """
+    # Normalize RGB to 0-1
+    r, g, b = rgb[0] / 255.0, rgb[1] / 255.0, rgb[2] / 255.0
+
+    # Convert to linear RGB
+    def srgb_to_linear(c):
+        if c <= 0.04045:
+            return c / 12.92
+        return ((c + 0.055) / 1.055) ** 2.4
+
+    r_linear = srgb_to_linear(r)
+    g_linear = srgb_to_linear(g)
+    b_linear = srgb_to_linear(b)
+
+    # Convert to XYZ using sRGB D65 conversion matrix
+    x = r_linear * 0.4124564 + g_linear * 0.3575761 + b_linear * 0.1804375
+    y = r_linear * 0.2126729 + g_linear * 0.7151522 + b_linear * 0.0721750
+    z = r_linear * 0.0193339 + g_linear * 0.1191920 + b_linear * 0.9503041
+
+    # Normalize by D65 white point
+    x = x / 0.95047
+    y = y / 1.00000
+    z = z / 1.08883
+
+    # Convert to LAB
+    def f(t):
+        delta = 6.0 / 29.0
+        if t > delta ** 3:
+            return t ** (1.0 / 3.0)
+        return t / (3 * delta ** 2) + 4.0 / 29.0
+
+    fx = f(x)
+    fy = f(y)
+    fz = f(z)
+
+    L = 116.0 * fy - 16.0
+    a = 500.0 * (fx - fy)
+    b = 200.0 * (fy - fz)
+
+    return (L, a, b)
+
+
 def _color_distance(c1: tuple[int, int, int], c2: tuple[int, int, int]) -> float:
     """
-    Calculate Euclidean distance between two RGB colors.
+    Calculate perceptual distance between two RGB colors using LAB color space (deltaE).
 
     Args:
         c1: First color as (R, G, B) tuple
         c2: Second color as (R, G, B) tuple
 
     Returns:
-        Squared Euclidean distance between the colors
+        Perceptual distance between the colors (deltaE)
     """
-    return (c1[0] - c2[0]) ** 2 + (c1[1] - c2[1]) ** 2 + (c1[2] - c2[2]) ** 2
+    lab1 = _rgb_to_lab(c1)
+    lab2 = _rgb_to_lab(c2)
+
+    # Calculate Euclidean distance in LAB space (deltaE)
+    return ((lab1[0] - lab2[0]) ** 2 +
+            (lab1[1] - lab2[1]) ** 2 +
+            (lab1[2] - lab2[2]) ** 2) ** 0.5
 
 
 def _mean_color(colors: list[tuple[int, int, int]]) -> tuple[int, int, int]:
