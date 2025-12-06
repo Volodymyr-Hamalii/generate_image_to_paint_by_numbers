@@ -6,6 +6,7 @@ Module for converting images to use only specific allowed colors.
 import numpy as np
 from PIL import Image, ImageFilter
 
+from utils.logger import logger
 from parameters_reader import ParametersImageSizeInMm
 from generate_image.utils import merge_small_regions
 
@@ -81,15 +82,15 @@ def generate_image_in_the_specific_colors(
     PIXELS_PER_MM = 2
     target_width = image_size_in_mm.width * PIXELS_PER_MM
     target_height = image_size_in_mm.height * PIXELS_PER_MM
-    print(f"  Resizing image to {target_width} x {target_height} pixels ({PIXELS_PER_MM} pixels/mm)")
+    logger.info(f"  Resizing image to {target_width} x {target_height} pixels ({PIXELS_PER_MM} pixels/mm)")
     image = image.resize((target_width, target_height), Image.Resampling.LANCZOS)
 
     # Convert hex colors to RGB
     palette = np.array([_hex_to_rgb(color) for color in allowed_colors])
-    print(f"  Converting to {len(palette)} allowed colors...")
+    logger.info(f"  Converting to {len(palette)} allowed colors...")
 
     # Convert image to numpy array for faster processing
-    print(f"  Mapping {image.width * image.height:,} pixels to nearest colors...")
+    logger.info(f"  Mapping {image.width * image.height:,} pixels to nearest colors...")
     img_array = np.array(image)
 
     # Process in batches to avoid memory issues with large images
@@ -107,7 +108,7 @@ def generate_image_in_the_specific_colors(
 
         if (i // batch_size) % 10 == 0:
             progress = 100 * end_idx // len(pixels_flat)
-            print(f"    Progress: {progress}%")
+            logger.info(f"    Progress: {progress}%")
 
     # Map pixels to nearest colors
     img_array = palette[nearest_indices].reshape(img_array.shape).astype(np.uint8)
@@ -119,12 +120,12 @@ def generate_image_in_the_specific_colors(
         filter_size += 1  # MedianFilter requires odd size
 
     # Apply median filter to smooth colors and reduce noise
-    print(f"  Applying median filter (size={filter_size}) to smooth colors...")
+    logger.info(f"  Applying median filter (size={filter_size}) to smooth colors...")
     median_filter = ImageFilter.MedianFilter(size=filter_size)
     image = image.filter(median_filter)
 
     # Re-apply palette mapping after filtering
-    print(f"  Re-mapping pixels after filtering...")
+    logger.info(f"  Re-mapping pixels after filtering...")
     img_array = np.array(image)
     pixels_flat = img_array.reshape(-1, 3)
     nearest_indices = np.zeros(len(pixels_flat), dtype=np.int32)
@@ -137,12 +138,12 @@ def generate_image_in_the_specific_colors(
 
         if (i // batch_size) % 10 == 0:
             progress = 100 * end_idx // len(pixels_flat)
-            print(f"    Progress: {progress}%")
+            logger.info(f"    Progress: {progress}%")
 
     img_array = palette[nearest_indices].reshape(img_array.shape).astype(np.uint8)
     image = Image.fromarray(img_array, 'RGB')
 
-    print(f"  Color conversion complete!")
+    logger.info(f"  Color conversion complete!")
 
     # Merge small regions to create larger paintable areas
     min_region_size_in_pixels = int(min_region_size_in_mm * PIXELS_PER_MM)

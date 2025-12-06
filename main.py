@@ -14,6 +14,7 @@ from parameters_reader import read_parameters, Parameters
 from generate_image.to_paint_by_numbers import generate_image_to_paint_by_numbers
 from generate_image.in_the_specific_colors import generate_image_in_the_specific_colors
 from generate_image.in_optimal_colors import generate_image_in_optimal_colors
+from utils.logger import logger
 
 
 def read_image(image_path: Path) -> Image.Image:
@@ -60,14 +61,14 @@ def save_image(image: Image.Image, output_dir: Path, image_name: str) -> None:
     """
     path = output_dir / image_name
     image.save(path)
-    print(f"> Saved image to {path}")
+    logger.info(f"> Saved image to {path}")
 
 
 def main() -> None:
     parameters: Parameters = read_parameters()
 
     for image_path in parameters.get_images_to_process_paths():
-        print(f"\nProcessing image: {image_path}")
+        logger.info(f"\nProcessing image: {image_path}")
 
         file_name: str = image_path.stem
         output_dir = get_output_dir(file_name)
@@ -77,25 +78,25 @@ def main() -> None:
         # Generate the image in the necessary colors
         image_in_specific_colors: Image.Image
         if parameters.to_use_only_allowed_colors.value:
-            print(f"Generating image in the specific colors...")
+            logger.info("Generating image in the specific colors...")
             image_in_specific_colors = generate_image_in_the_specific_colors(
                 image,
                 parameters.to_use_only_allowed_colors.allowed_colors,
                 parameters.image_size_in_mm,
                 parameters.min_region_size_in_mm)
         else:
-            print(f"Generating image in the optimal colors...")
+            logger.info("Generating image in the optimal colors...")
             image_in_specific_colors = generate_image_in_optimal_colors(
                 image,
                 parameters.max_number_of_colors,
                 parameters.image_size_in_mm,
                 parameters.min_region_size_in_mm)
-        
-        print(f"Image in the colors generated. Saving...")
+
+        logger.info("Image in the colors generated. Saving...")
         output_dir.mkdir(parents=True, exist_ok=True)
         save_image(image_in_specific_colors, output_dir, file_name + "_in_colors.png")
 
-        print(f"Generating image to paint by the numbers...")
+        logger.info("Generating image to paint by the numbers...")
         image_to_paint_by_numbers: Image.Image = generate_image_to_paint_by_numbers(
             image_in_specific_colors,
             parameters.border,
@@ -103,10 +104,10 @@ def main() -> None:
         )
 
         # Save the image to paint by the numbers
-        print(f"Image to paint by the numbers generated. Saving...")
+        logger.info("Image to paint by the numbers generated. Saving...")
         save_image(image_to_paint_by_numbers, output_dir, file_name + "_by_numbers.png")
 
-        print(f"Image {image_path.name} processing completed!")
+        logger.info(f"Image {image_path.name} processing completed!")
 
 
 if __name__ == '__main__':

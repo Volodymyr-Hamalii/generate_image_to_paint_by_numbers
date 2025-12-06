@@ -3,8 +3,11 @@ Utility functions shared across image generation modules.
 """
 
 import math
+
 import numpy as np
 from PIL import Image
+
+from utils.logger import logger
 
 
 COMPACTNESS_THRESHOLD = 25
@@ -137,7 +140,7 @@ def merge_small_regions(
         raise ValueError("Image pixels are None")
 
     # Create label image mapping each unique color to a number
-    print(f"  Segmenting into regions for merging...")
+    logger.info(f"  Segmenting into regions for merging...")
     unique_colors = {}
     label_image = np.zeros((height, width), dtype=np.int32)
 
@@ -162,7 +165,7 @@ def merge_small_regions(
                 if region:
                     regions.append(region)
 
-    print(f"  Found {len(regions)} initial regions")
+    logger.info(f"  Found {len(regions)} initial regions")
 
     # Sort regions by size (smallest first for merging)
     regions = sorted(regions, key=len)
@@ -175,7 +178,7 @@ def merge_small_regions(
 
     merged = [False] * len(regions)
 
-    print(f"  Merging small regions (min size: {min_region_size_in_pixels} pixels)...")
+    logger.info(f"  Merging small regions (min size: {min_region_size_in_pixels} pixels)...")
     for idx in range(len(regions)):
         if merged[idx] or len(regions[idx]) >= min_region_size_in_pixels:
             continue
@@ -204,7 +207,7 @@ def merge_small_regions(
 
     # Keep only non-merged regions
     final_regions = [regions[i] for i in range(len(regions)) if not merged[i]]
-    print(f"  After size-based merging: {len(final_regions)} regions")
+    logger.info(f"  After size-based merging: {len(final_regions)} regions")
 
     # Second pass: Merge thin/elongated regions based on compactness (multiple passes)
     # Run 3 passes with progressively more aggressive thresholds
@@ -217,7 +220,7 @@ def merge_small_regions(
     regions = final_regions
 
     for pass_threshold, pass_max_area, pass_name in compactness_passes:
-        print(f"  Merging thin/elongated regions - {pass_name} (threshold: {pass_threshold}, max area: {pass_max_area})...")
+        logger.info(f"  Merging thin/elongated regions - {pass_name} (threshold: {pass_threshold}, max area: {pass_max_area})...")
 
         # Rebuild region_map
         region_map = {}
@@ -263,13 +266,13 @@ def merge_small_regions(
 
         # Keep only non-merged regions after this pass
         regions = [regions[i] for i in range(len(regions)) if not merged[i]]
-        print(f"    After {pass_name}: {len(regions)} regions")
+        logger.info(f"    After {pass_name}: {len(regions)} regions")
 
     final_regions = regions
-    print(f"  After all compactness-based merging: {len(final_regions)} regions")
+    logger.info(f"  After all compactness-based merging: {len(final_regions)} regions")
 
     # Update image pixels to reflect merged regions
-    print(f"  Applying merged regions to image...")
+    logger.info(f"  Applying merged regions to image...")
     for region in final_regions:
         # Get the color for this region (use the label from any pixel in the region)
         sample_x, sample_y = next(iter(region))

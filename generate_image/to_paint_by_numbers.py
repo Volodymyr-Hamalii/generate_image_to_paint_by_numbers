@@ -5,6 +5,7 @@ Module for converting color-reduced images to paint-by-numbers templates.
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
+from utils.logger import logger
 from parameters_reader import ParametersBorder, ParametersNumbers
 from generate_image.utils import flood_fill_region
 
@@ -115,7 +116,7 @@ def generate_image_to_paint_by_numbers(
     max_font_size_pixels = int(numbers_params.font_size_in_mm.max * PIXELS_PER_MM)
 
     # Create label image mapping each unique color to a number
-    print(f"  Creating color label map...")
+    logger.info(f"  Creating color label map...")
     unique_colors = {}
     label_image = np.zeros((height, width), dtype=np.int32)
 
@@ -126,10 +127,10 @@ def generate_image_to_paint_by_numbers(
                 unique_colors[color] = len(unique_colors)
             label_image[y, x] = unique_colors[color]
 
-    print(f"  Found {len(unique_colors)} unique colors")
+    logger.info(f"  Found {len(unique_colors)} unique colors")
 
     # Segment image into regions using flood fill (regions already merged)
-    print(f"  Segmenting image into regions using flood fill...")
+    logger.info(f"  Segmenting image into regions using flood fill...")
     visited = np.zeros((height, width), dtype=bool)
     regions = []
 
@@ -140,10 +141,10 @@ def generate_image_to_paint_by_numbers(
                 if region:
                     regions.append(region)
 
-    print(f"  Found {len(regions)} regions")
+    logger.info(f"  Found {len(regions)} regions")
 
     # Create border image
-    print(f"  Creating borders between regions...")
+    logger.info(f"  Creating borders between regions...")
     border_image = _create_border_image(regions, width, height)
 
     # Create output image (white background)
@@ -151,13 +152,13 @@ def generate_image_to_paint_by_numbers(
     draw = ImageDraw.Draw(output)
 
     # Draw single-pixel borders for cleaner lines
-    print(f"  Drawing borders (single pixel, color: {border_params.color})...")
+    logger.info(f"  Drawing borders (single pixel, color: {border_params.color})...")
     for y in range(height):
         for x in range(width):
             if border_image[y, x] == 1:
                 draw.point((x, y), fill=border_params.color)
 
-    print(f"  Placing numeric labels in {len(regions)} regions "
+    logger.info(f"  Placing numeric labels in {len(regions)} regions "
     f"(font: {numbers_params.font_size_in_mm.min}-{numbers_params.font_size_in_mm.max}mm)...")
 
     # Cache fonts of different sizes
@@ -219,5 +220,5 @@ def generate_image_to_paint_by_numbers(
 
         draw.text((final_x, final_y), text, font=font, fill=numbers_params.color)
 
-    print(f"  Paint-by-numbers template complete!")
+    logger.info(f"  Paint-by-numbers template complete!")
     return output
