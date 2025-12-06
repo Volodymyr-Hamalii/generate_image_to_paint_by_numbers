@@ -12,7 +12,8 @@ class TimestampFormatter(logging.Formatter):
 
     def format(self, record):
         # Add timestamp to the log record
-        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        # timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        timestamp = datetime.now().strftime('%H:%M:%S')
         record.timestamp = timestamp
         return super().format(record)
 
