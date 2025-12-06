@@ -206,55 +206,67 @@ def merge_small_regions(
     final_regions = [regions[i] for i in range(len(regions)) if not merged[i]]
     print(f"  After size-based merging: {len(final_regions)} regions")
 
-    # Second pass: Merge thin/elongated regions based on compactness
-    print(f"  Merging thin/elongated regions (compactness threshold: {COMPACTNESS_THRESHOLD})...")
+    # Second pass: Merge thin/elongated regions based on compactness (multiple passes)
+    # Run 3 passes with progressively more aggressive thresholds
+    compactness_passes = [
+        (0.25, 1000, "Pass 1"),  # First pass: moderate threshold
+        (0.35, 1000, "Pass 2"),  # Second pass: more aggressive
+        (0.50, 500, "Pass 3"),   # Third pass: very aggressive for smaller regions
+    ]
 
-    # Rebuild regions list and region_map after size-based merging
     regions = final_regions
-    region_map = {}
-    for idx, region in enumerate(regions):
-        for pixel in region:
-            region_map[pixel] = idx
 
-    merged = [False] * len(regions)
+    for pass_threshold, pass_max_area, pass_name in compactness_passes:
+        print(f"  Merging thin/elongated regions - {pass_name} (threshold: {pass_threshold}, max area: {pass_max_area})...")
 
-    for idx in range(len(regions)):
-        if merged[idx]:
-            continue
+        # Rebuild region_map
+        region_map = {}
+        for idx, region in enumerate(regions):
+            for pixel in region:
+                region_map[pixel] = idx
 
-        # Skip very large regions
-        if len(regions[idx]) > MAX_AREA_FOR_COMPACTNESS_CHECK:
-            continue
+        merged = [False] * len(regions)
 
-        # Calculate compactness
-        compactness = _calculate_region_compactness(regions[idx], region_map, idx, width, height)
+        for idx in range(len(regions)):
+            if merged[idx]:
+                continue
 
-        if compactness < COMPACTNESS_THRESHOLD:
-            # This is a thin/elongated region - merge with largest neighbor
-            neighbors = set()
-            for x, y in regions[idx]:
-                for dx, dy in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
-                    nx, ny = x + dx, y + dy
-                    if 0 <= nx < width and 0 <= ny < height:
-                        neighbor_pixel = (nx, ny)
-                        if neighbor_pixel in region_map:
-                            neighbor_idx = region_map[neighbor_pixel]
-                            if neighbor_idx != idx and not merged[neighbor_idx]:
-                                neighbors.add(neighbor_idx)
+            # Skip very large regions
+            if len(regions[idx]) > pass_max_area:
+                continue
 
-            if neighbors:
-                # Merge with the largest neighbor
-                target_idx = max(neighbors, key=lambda i: len(regions[i]))
-                regions[target_idx] = regions[target_idx].union(regions[idx])
-                merged[idx] = True
+            # Calculate compactness
+            compactness = _calculate_region_compactness(regions[idx], region_map, idx, width, height)
 
-                # Update region map
-                for pixel in regions[idx]:
-                    region_map[pixel] = target_idx
+            if compactness < pass_threshold:
+                # This is a thin/elongated region - merge with largest neighbor
+                neighbors = set()
+                for x, y in regions[idx]:
+                    for dx, dy in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
+                        nx, ny = x + dx, y + dy
+                        if 0 <= nx < width and 0 <= ny < height:
+                            neighbor_pixel = (nx, ny)
+                            if neighbor_pixel in region_map:
+                                neighbor_idx = region_map[neighbor_pixel]
+                                if neighbor_idx != idx and not merged[neighbor_idx]:
+                                    neighbors.add(neighbor_idx)
 
-    # Keep only non-merged regions after compactness-based merging
-    final_regions = [regions[i] for i in range(len(regions)) if not merged[i]]
-    print(f"  After compactness-based merging: {len(final_regions)} regions")
+                if neighbors:
+                    # Merge with the largest neighbor
+                    target_idx = max(neighbors, key=lambda i: len(regions[i]))
+                    regions[target_idx] = regions[target_idx].union(regions[idx])
+                    merged[idx] = True
+
+                    # Update region map
+                    for pixel in regions[idx]:
+                        region_map[pixel] = target_idx
+
+        # Keep only non-merged regions after this pass
+        regions = [regions[i] for i in range(len(regions)) if not merged[i]]
+        print(f"    After {pass_name}: {len(regions)} regions")
+
+    final_regions = regions
+    print(f"  After all compactness-based merging: {len(final_regions)} regions")
 
     # Update image pixels to reflect merged regions
     print(f"  Applying merged regions to image...")
