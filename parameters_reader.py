@@ -2,6 +2,8 @@ from pathlib import Path
 from dataclasses import dataclass, field
 import json
 
+from utils.logger import logger
+
 ### Data classes ###
 
 @dataclass(frozen=True)
@@ -44,7 +46,18 @@ class Parameters:
 
     def get_images_to_process_paths(self) -> list[Path]:
         if self.images_to_process:
-            return [Path(__file__).parent / image_path for image_path in self.images_to_process]
+            image_paths = []
+            for image_path_str in self.images_to_process:
+                image_path = Path(__file__).parent / image_path_str
+                if image_path.exists():
+                    image_paths.append(image_path)
+                else:
+                    image_path = Path(__file__).parent / "images" / image_path_str
+                    if image_path.exists():
+                        image_paths.append(image_path)
+                    else:
+                        logger.error(f"Image {image_path_str} not found. Skipping...")
+            return image_paths
 
         # If no images are specified, get all images from the images folder
         images_folder = Path(__file__).parent / "images"

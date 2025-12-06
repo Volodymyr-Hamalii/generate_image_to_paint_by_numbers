@@ -17,7 +17,7 @@ from generate_image.in_optimal_colors import generate_image_in_optimal_colors
 from utils.logger import logger
 
 
-def read_image(image_path: Path) -> Image.Image:
+def read_image(image_path: Path) -> Image.Image | None:
     """
     Read an image from the given path.
 
@@ -27,8 +27,12 @@ def read_image(image_path: Path) -> Image.Image:
     Returns:
         PIL Image object in RGB mode
     """
-    image = Image.open(image_path)
-    return image.convert('RGB')
+    try:
+        image = Image.open(image_path)
+    except Exception as e:
+        logger.error(f"Error reading image {image_path}: {e}")
+        return None
+    return image.convert("RGB")
 
 
 def get_output_dir(file_name: str) -> Path:
@@ -74,6 +78,9 @@ def main() -> None:
         output_dir = get_output_dir(file_name)
 
         image = read_image(image_path)
+        if image is None:
+            logger.error(f"Error reading image {image_path}. Skipping...")
+            continue
 
         # Generate the image in the necessary colors
         image_in_specific_colors: Image.Image
