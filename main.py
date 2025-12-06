@@ -9,6 +9,7 @@ Into the outputs it puts for each image 2 files:
 
 from pathlib import Path
 from PIL import Image
+import time
 
 from parameters_reader import read_parameters, Parameters
 from generate_image.to_paint_by_numbers import generate_image_to_paint_by_numbers
@@ -72,6 +73,7 @@ def main() -> None:
     parameters: Parameters = read_parameters()
 
     for image_path in parameters.get_images_to_process_paths():
+        start_time = time.time()
         logger.info(f"\nProcessing image: {image_path}")
 
         file_name: str = image_path.stem
@@ -114,7 +116,10 @@ def main() -> None:
         logger.info("Image to paint by the numbers generated. Saving...")
         save_image(image_to_paint_by_numbers, output_dir, file_name + "_by_numbers.png")
 
-        logger.info(f"Image {image_path.name} processing completed!")
+        end_time = time.time()
+        processing_time_seconds = end_time - start_time
+        processing_time_minutes = processing_time_seconds / 60
+        logger.info(f"Image {image_path.name} processing completed in {processing_time_minutes:.2f} minutes.")
 
 
 if __name__ == '__main__':
