@@ -40,12 +40,13 @@ def get_output_dir(file_name: str) -> Path:
     Returns:
         Output directory
     """
-    for i in range(999):
+    max_attempts = 999
+    for i in range(max_attempts):
         dir_name = f"{file_name}-{i}" if i else file_name
         output_dir = Path(__file__).parent / "outputs" / dir_name
         if not output_dir.exists():
             return output_dir
-    raise ValueError(f"Output directory for {file_name} not found")
+    raise ValueError(f"Output directory for {file_name} not found (after {max_attempts} attempts)")
 
 
 def save_image(image: Image.Image, output_dir: Path, image_name: str) -> None:
