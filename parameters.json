@@ -1,18 +1,18 @@
 {
-  "images_to_process": ["images/image_1.png"],
+  "images_to_process": ["markiza.jpg"],
 
   "image_size_in_mm": {
     "width": 2500,
     "height": 3000
   },
-  "min_region_size_in_mm": 100,
+  "min_region_size_in_mm": 500,
 
   "border": {
     "width_in_mm": 0.25,
-    "color": "#AAAAAA"
+    "color": "#E6E6E6"
   },
   "numbers": {
-    "color": "#AAAAAA",
+    "color": "#D9D9D9",
     "font_size_in_mm": {
       "min": 8,
       "max": 14
@@ -21,7 +21,7 @@
 
   "to_use_only_allowed_colors": {
     "_description": "If 'value' is true, the image will be converted to use only the allowed colors. If false, 'allowed_colors' is ignored and the image will be converted to use the optimal colors with the max number of colors specified below.",
-    "value": true,
+    "value": false,
     "allowed_colors": [
       "#00AEC7",
       "#66CC66",
