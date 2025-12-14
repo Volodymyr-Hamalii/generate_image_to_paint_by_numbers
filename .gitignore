@@ -1,3 +1,10 @@
 __pycache__/
 .venv/
 .DS_Store
+
+outputs/*
+images/*
+
+# Exclude Markiza as an example
+!images/markiza
+!outputs/markiza
