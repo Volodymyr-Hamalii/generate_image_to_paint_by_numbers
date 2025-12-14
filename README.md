@@ -5,14 +5,17 @@ A Python tool that converts images into paint-by-numbers templates with optimize
 ## Examples
 
 ### Input Image
+
 ![Input Image](images/markiza.jpg)
 
 ### Step 1: Color-Optimized Image
+
 The script first converts the image to use a limited color palette while maintaining visual quality:
 
 ![Color-Optimized Output](outputs/markiza/markiza_in_colors.png)
 
 ### Step 2: Paint-by-Numbers Template
+
 Then it generates a black & white template with numbered regions and borders:
 
 ![Paint-by-Numbers Output](outputs/markiza/markiza_by_numbers.png)
@@ -23,21 +26,26 @@ Then it generates a black & white template with numbered regions and borders:
 - Pillow (PIL)
 - NumPy
 
+(check requirements.txt)
+
 ## Installation
 
 1. Clone the repository:
+
 ```bash
-git clone <repository-url>
+git clone <https://github.com/Volodymyr-Hamalii/generate_image_to_paint_by_numbers.git>
 cd generate_image_to_paint_by_numbers
 ```
 
 2. Create a virtual environment (recommended):
+
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 ```
 
 3. Install dependencies:
+
 ```bash
 pip install -r requirements.txt
 ```
@@ -49,6 +57,7 @@ pip install -r requirements.txt
 2. Configure the processing parameters in `parameters.json` (see Parameters section below)
 
 3. Run the script:
+
 ```bash
 python main.py
 ```
@@ -79,6 +88,7 @@ Edit `parameters.json` to customize the image processing:
 ### Color Settings
 
 - **`to_use_only_allowed_colors`** (object)
+
   - `value` (boolean): If `true`, uses only colors from `allowed_colors` list. If `false`, uses k-means clustering to find optimal colors
   - `allowed_colors` (list): Hex color codes to use when `value` is `true` (e.g., `["#FF0000", "#00FF00", "#0000FF"]`)
 
@@ -89,11 +99,13 @@ Edit `parameters.json` to customize the image processing:
 ### Region Settings
 
 - **`min_region_size_in_mm`** (integer)
+
   - Minimum size for paintable regions in millimeters
   - Smaller regions are automatically merged with neighbors
   - Larger values create simpler templates with bigger areas to paint
 
 - **`compactness_passes`** (list of objects)
+
   - Controls merging of thin/elongated regions to create more paintable shapes
   - Each pass has:
     - `threshold` (float): Compactness threshold (0.0-1.0, where 1.0 is a perfect circle)
@@ -101,10 +113,11 @@ Edit `parameters.json` to customize the image processing:
     - `name` (string): Descriptive name for the pass
   - Multiple passes can be configured for progressive merging
   - Example:
+
     ```json
     [
-      {"threshold": 0.25, "max_area": 2000, "name": "Pass 1"},
-      {"threshold": 0.4, "max_area": 1500, "name": "Pass 2"}
+      { "threshold": 0.25, "max_area": 2000, "name": "Pass 1" },
+      { "threshold": 0.4, "max_area": 1500, "name": "Pass 2" }
     ]
     ```
 
@@ -172,7 +185,3 @@ Edit `parameters.json` to customize the image processing:
 - Increase `min_region_size_in_mm` if you want larger, simpler regions
 - Use `to_use_only_allowed_colors` if you have a specific paint set and want exact color matching
 - The processing time depends on image size and complexity (typically 1-5 minutes per image)
-
-## License
-
-[Add your license here]
