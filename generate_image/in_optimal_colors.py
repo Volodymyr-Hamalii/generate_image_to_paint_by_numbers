@@ -8,7 +8,7 @@ import numpy as np
 from PIL import Image, ImageFilter
 
 from utils.logger import logger
-from parameters_reader import ParametersImageSizeInMm
+from parameters_reader import ParametersImageSizeInMm, ParametersCompactnessPass
 from generate_image.utils import merge_small_regions
 
 
@@ -162,7 +162,8 @@ def generate_image_in_optimal_colors(
     image: Image.Image,
     max_number_of_colors: int,
     image_size_in_mm: ParametersImageSizeInMm,
-    min_region_size_in_mm: int
+    min_region_size_in_mm: int,
+    compactness_passes: list[ParametersCompactnessPass]
 ) -> Image.Image:
     """
     Convert the image to use optimal colors found through k-means clustering.
@@ -254,6 +255,6 @@ def generate_image_in_optimal_colors(
 
     # Merge small regions to create larger paintable areas
     min_region_size_in_pixels = int(min_region_size_in_mm * PIXELS_PER_MM)
-    image = merge_small_regions(image, min_region_size_in_pixels)
+    image = merge_small_regions(image, min_region_size_in_pixels, compactness_passes)
 
     return image

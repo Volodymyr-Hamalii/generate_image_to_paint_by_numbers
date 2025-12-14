@@ -92,14 +92,18 @@ def main() -> None:
                 image,
                 parameters.to_use_only_allowed_colors.allowed_colors,
                 parameters.image_size_in_mm,
-                parameters.min_region_size_in_mm)
+                parameters.min_region_size_in_mm,
+                parameters.compactness_passes,
+            )
         else:
             logger.info("Generating image in the optimal colors...")
             image_in_specific_colors = generate_image_in_optimal_colors(
                 image,
                 parameters.max_number_of_colors,
                 parameters.image_size_in_mm,
-                parameters.min_region_size_in_mm)
+                parameters.min_region_size_in_mm,
+                parameters.compactness_passes,
+            )
 
         logger.info("Image in the colors generated. Saving...")
         output_dir.mkdir(parents=True, exist_ok=True)

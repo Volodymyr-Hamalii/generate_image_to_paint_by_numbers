@@ -63,6 +63,14 @@ class ParametersNumbers:
     color: str
     font_size_in_mm: ParametersNumbersFontSizeInMm
 
+
+@dataclass(frozen=True)
+class ParametersCompactnessPass:
+    threshold: float
+    max_area: int
+    name: str
+
+
 @dataclass(frozen=True)
 class Parameters:
     images_to_process: list[str]
@@ -72,6 +80,7 @@ class Parameters:
     border: ParametersBorder
     numbers: ParametersNumbers
     min_region_size_in_mm: int
+    compactness_passes: list[ParametersCompactnessPass]
 
     def get_images_to_process_paths(self) -> list[Path]:
         if self.images_to_process:
@@ -123,4 +132,12 @@ def read_parameters() -> Parameters:
                     max=parameters["numbers"]["font_size_in_mm"]["max"],
                 ),
             ),
+            compactness_passes=[
+                ParametersCompactnessPass(
+                    threshold=pass_config["threshold"],
+                    max_area=pass_config["max_area"],
+                    name=pass_config["name"],
+                )
+                for pass_config in parameters["compactness_passes"]
+            ],
         )

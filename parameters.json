@@ -7,6 +7,14 @@
   },
   "min_region_size_in_mm": 500,
 
+  "compactness_passes": [
+    {
+      "threshold": 0.25,
+      "max_area": 2000,
+      "name": "Pass 1"
+    }
+  ],
+
   "border": {
     "width_in_mm": 0.25,
     "color": "#E6E6E6"

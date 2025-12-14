@@ -8,6 +8,7 @@ import numpy as np
 from PIL import Image
 
 from utils.logger import logger
+from parameters_reader import ParametersCompactnessPass
 
 
 COMPACTNESS_THRESHOLD = 25
@@ -121,7 +122,8 @@ def _calculate_region_compactness(
 
 def merge_small_regions(
     image: Image.Image,
-    min_region_size_in_pixels: int
+    min_region_size_in_pixels: int,
+    compactness_passes: list[ParametersCompactnessPass]
 ) -> Image.Image:
     """
     Merge small regions with their neighbors to create larger paintable areas.
@@ -129,6 +131,7 @@ def merge_small_regions(
     Args:
         image: Input PIL Image in RGB mode
         min_region_size_in_pixels: Minimum size for a region (smaller ones will be merged)
+        compactness_passes: List of compactness pass configurations
 
     Returns:
         PIL Image with small regions merged
@@ -210,16 +213,12 @@ def merge_small_regions(
     logger.info(f"  After size-based merging: {len(final_regions)} regions")
 
     # Second pass: Merge thin/elongated regions based on compactness (multiple passes)
-    # Run 3 passes with progressively more aggressive thresholds
-    compactness_passes = [
-        (0.25, 1000, "Pass 1"),  # First pass: moderate threshold
-        (0.35, 1000, "Pass 2"),  # Second pass: more aggressive
-        (0.50, 500, "Pass 3"),   # Third pass: very aggressive for smaller regions
-    ]
-
     regions = final_regions
 
-    for pass_threshold, pass_max_area, pass_name in compactness_passes:
+    for compactness_pass in compactness_passes:
+        pass_threshold = compactness_pass.threshold
+        pass_max_area = compactness_pass.max_area
+        pass_name = compactness_pass.name
         logger.info(f"  Merging thin/elongated regions - {pass_name} (threshold: {pass_threshold}, max area: {pass_max_area})...")
 
         # Rebuild region_map
