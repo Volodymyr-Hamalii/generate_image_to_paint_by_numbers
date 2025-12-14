@@ -137,9 +137,10 @@ def generate_image_in_the_specific_colors(
     # Resize image to specified dimensions (2 pixels per mm for manageable file size)
     # Note: For very large canvases, using 2 pixels/mm provides good quality while keeping memory usage reasonable
     PIXELS_PER_MM = 2
-    target_width = image_size_in_mm.width * PIXELS_PER_MM
-    target_height = image_size_in_mm.height * PIXELS_PER_MM
-    logger.info(f"  Resizing image to {target_width} x {target_height} pixels ({PIXELS_PER_MM} pixels/mm)")
+    width_in_mm, height_in_mm = image_size_in_mm.get_dimensions(image.width, image.height)
+    target_width = width_in_mm * PIXELS_PER_MM
+    target_height = height_in_mm * PIXELS_PER_MM
+    logger.info(f"  Resizing image to {target_width} x {target_height} pixels ({PIXELS_PER_MM} pixels/mm, {width_in_mm} x {height_in_mm} mm)")
     image = image.resize((target_width, target_height), Image.Resampling.LANCZOS)
 
     # Convert hex colors to RGB

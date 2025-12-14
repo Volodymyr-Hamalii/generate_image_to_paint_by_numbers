@@ -14,8 +14,38 @@ class ParametersUseOnlyAllowedColors:
 
 @dataclass(frozen=True)
 class ParametersImageSizeInMm:
-    width: int
-    height: int
+    width: int | None
+    height: int | None
+
+    def get_dimensions(self, image_width: int, image_height: int) -> tuple[int, int]:
+        """
+        Calculate the target dimensions in mm, calculating the missing dimension
+        based on the image aspect ratio if needed.
+
+        Args:
+            image_width: Original image width in pixels
+            image_height: Original image height in pixels
+
+        Returns:
+            Tuple of (width_in_mm, height_in_mm)
+        """
+        if self.width is not None and self.height is not None:
+            return (self.width, self.height)
+
+        aspect_ratio = image_width / image_height
+
+        if self.width is not None:
+            # Calculate height based on width and aspect ratio
+            calculated_height = int(self.width / aspect_ratio)
+            return (self.width, calculated_height)
+
+        if self.height is not None:
+            # Calculate width based on height and aspect ratio
+            calculated_width = int(self.height * aspect_ratio)
+            return (calculated_width, self.height)
+        
+        raise ValueError("Either width or height must be specified")
+
 
 @dataclass(frozen=True)
 class ParametersBorder:
