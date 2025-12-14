@@ -33,7 +33,7 @@ Then it generates a black & white template with numbered regions and borders:
 1. Clone the repository:
 
 ```bash
-git clone <https://github.com/Volodymyr-Hamalii/generate_image_to_paint_by_numbers.git>
+git clone https://github.com/Volodymyr-Hamalii/generate_image_to_paint_by_numbers.git
 cd generate_image_to_paint_by_numbers
 ```
 
