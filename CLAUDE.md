@@ -53,6 +53,8 @@ This is a Python-based tool that converts images into paint-by-numbers templates
 ```
 Input Image
     ↓
+Center Crop (if enabled and both dimensions specified)
+    ↓
 Color Reduction (k-means or palette mapping)
     ↓
 Region Segmentation (flood fill)
@@ -82,7 +84,15 @@ All processing parameters are defined in `parameters.json` and loaded through da
 
 ### December 2024
 
-1. **Optional Dimension Support** (`ParametersImageSizeInMm`):
+1. **Center Cropping Feature** (`ParametersCropBehavior` and `main.py`):
+   - Added `crop_to_fit` parameter to control cropping behavior
+   - Implemented `center_crop_image()` function in `main.py`
+   - When both width and height are specified and `enabled: true`, images are cropped symmetrically before resizing
+   - Prevents distortion when target aspect ratio differs from source image
+   - Cropping is symmetric: equal amounts removed from opposite edges
+   - Applied in main.py before color generation functions are called
+
+2. **Optional Dimension Support** (`ParametersImageSizeInMm`):
    - Made width/height optional (one required)
    - Added `get_dimensions()` method to calculate missing dimension from image aspect ratio
    - Maintains proportions when only one dimension is specified
@@ -140,6 +150,12 @@ All processing parameters are defined in `parameters.json` and loaded through da
 - Edit `merge_small_regions()` in `generate_image/utils.py`
 - Configure via `compactness_passes` in `parameters.json`
 - Consider both size and compactness thresholds
+
+### Modifying Crop Behavior
+
+- Edit `center_crop_image()` in `main.py` for cropping algorithm
+- Current implementation uses symmetric center crop
+- Controlled via `crop_to_fit.enabled` in `parameters.json`
 
 ## Known Limitations
 

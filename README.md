@@ -85,6 +85,15 @@ Edit `parameters.json` to customize the image processing:
   - If only one dimension is provided, the other is calculated automatically to maintain the original aspect ratio
   - Example: `{"width": 2000, "height": null}` will calculate height based on image proportions
 
+### Crop to Fit
+
+- **`crop_to_fit`** (object)
+  - `enabled` (boolean): Controls cropping behavior when both width and height are specified
+  - If `true`: Image is cropped symmetrically (equal amounts from top/bottom or left/right) to match the target aspect ratio before resizing. This prevents distortion.
+  - If `false`: Image is stretched or squashed to fit the specified dimensions (may cause distortion)
+  - Only applies when both `width` and `height` are specified in `image_size_in_mm`
+  - Example: If your image is 4000x3000 (4:3 ratio) and you specify 2000mm x 2000mm (1:1 ratio), enabling this will crop 1000 pixels from left and right to create a 3000x3000 square before resizing
+
 ### Color Settings
 
 - **`to_use_only_allowed_colors`** (object)
@@ -144,6 +153,9 @@ Edit `parameters.json` to customize the image processing:
     "width": 2000,
     "height": null
   },
+  "crop_to_fit": {
+    "enabled": true
+  },
   "min_region_size_in_mm": 500,
   "compactness_passes": [
     {
@@ -174,14 +186,17 @@ Edit `parameters.json` to customize the image processing:
 ## How It Works
 
 1. **Image Loading**: Reads images from the `images/` folder
-2. **Color Reduction**: Uses either k-means clustering (optimal colors) or maps to a predefined palette (allowed colors)
-3. **Region Segmentation**: Identifies continuous regions of the same color
-4. **Region Merging**: Combines small regions and elongated regions based on configured thresholds
-5. **Template Generation**: Creates a black & white template with numbered regions and borders
+2. **Center Cropping** (optional): Crops image symmetrically to match target aspect ratio if both dimensions are specified
+3. **Color Reduction**: Uses either k-means clustering (optimal colors) or maps to a predefined palette (allowed colors)
+4. **Region Segmentation**: Identifies continuous regions of the same color
+5. **Region Merging**: Combines small regions and elongated regions based on configured thresholds
+6. **Template Generation**: Creates a black & white template with numbered regions and borders
 
 ## Tips
 
 - Start with `max_number_of_colors` around 20-25 for a good balance
 - Increase `min_region_size_in_mm` if you want larger, simpler regions
 - Use `to_use_only_allowed_colors` if you have a specific paint set and want exact color matching
+- Enable `crop_to_fit` when both dimensions are specified to prevent image distortion
+- With `crop_to_fit` enabled, consider which parts of your image are most important (center cropping removes edges symmetrically)
 - The processing time depends on image size and complexity (typically 1-5 minutes per image)

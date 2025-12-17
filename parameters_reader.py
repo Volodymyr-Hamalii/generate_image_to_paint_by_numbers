@@ -48,6 +48,12 @@ class ParametersImageSizeInMm:
 
 
 @dataclass(frozen=True)
+class ParametersCropBehavior:
+    """Configuration for image cropping behavior when dimensions don't match aspect ratio."""
+    enabled: bool
+
+
+@dataclass(frozen=True)
 class ParametersBorder:
     width_in_mm: int
     color: str
@@ -77,6 +83,7 @@ class Parameters:
     to_use_only_allowed_colors: ParametersUseOnlyAllowedColors
     max_number_of_colors: int
     image_size_in_mm: ParametersImageSizeInMm
+    crop_to_fit: ParametersCropBehavior
     border: ParametersBorder
     numbers: ParametersNumbers
     min_region_size_in_mm: int
@@ -114,6 +121,9 @@ def read_parameters() -> Parameters:
             image_size_in_mm=ParametersImageSizeInMm(
                 width=parameters["image_size_in_mm"]["width"],
                 height=parameters["image_size_in_mm"]["height"],
+            ),
+            crop_to_fit=ParametersCropBehavior(
+                enabled=parameters["crop_to_fit"]["enabled"],
             ),
             min_region_size_in_mm=parameters["min_region_size_in_mm"],
             border=ParametersBorder(

@@ -36,6 +36,57 @@ def read_image(image_path: Path) -> Image.Image | None:
     return image.convert("RGB")
 
 
+def center_crop_image(
+    image: Image.Image,
+    target_width_mm: int,
+    target_height_mm: int
+) -> Image.Image:
+    """
+    Crop the image symmetrically to match target aspect ratio.
+
+    Crops equal amounts from top/bottom or left/right to achieve the target
+    aspect ratio without distortion.
+
+    Args:
+        image: PIL Image object to crop
+        target_width_mm: Target width in millimeters
+        target_height_mm: Target height in millimeters
+
+    Returns:
+        Cropped PIL Image object
+    """
+    # Calculate aspect ratios
+    target_aspect = target_width_mm / target_height_mm
+    current_aspect = image.width / image.height
+
+    # If aspect ratios match (within tolerance), no cropping needed
+    if abs(target_aspect - current_aspect) < 0.001:
+        return image
+
+    # Determine crop dimensions
+    if current_aspect > target_aspect:
+        # Image is wider than target - crop left and right
+        new_width = int(image.height * target_aspect)
+        new_height = image.height
+        left = (image.width - new_width) // 2
+        top = 0
+        right = left + new_width
+        bottom = image.height
+    else:
+        # Image is taller than target - crop top and bottom
+        new_width = image.width
+        new_height = int(image.width / target_aspect)
+        left = 0
+        top = (image.height - new_height) // 2
+        right = image.width
+        bottom = top + new_height
+
+    logger.info(f"  Cropping from {image.width}x{image.height} to {new_width}x{new_height} "
+                f"(removed {image.width - new_width}px horizontally, {image.height - new_height}px vertically)")
+
+    return image.crop((left, top, right, bottom))
+
+
 def get_output_dir(file_name: str) -> Path:
     """
     Get the output directory for the given file name.
@@ -83,6 +134,17 @@ def main() -> None:
         if image is None:
             logger.error(f"Error reading image {image_path}. Skipping...")
             continue
+
+        # Apply center cropping if enabled and both dimensions are specified
+        if (parameters.crop_to_fit.enabled and
+            parameters.image_size_in_mm.width is not None and
+            parameters.image_size_in_mm.height is not None):
+            logger.info("Applying center crop to match target aspect ratio...")
+            image = center_crop_image(
+                image,
+                parameters.image_size_in_mm.width,
+                parameters.image_size_in_mm.height
+            )
 
         # Generate the image in the necessary colors
         image_in_specific_colors: Image.Image

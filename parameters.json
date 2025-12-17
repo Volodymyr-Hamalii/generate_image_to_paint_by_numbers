@@ -2,9 +2,15 @@
   "images_to_process": ["markiza.jpg"],
 
   "image_size_in_mm": {
-    "width": 2500,
-    "height": 3000
+    "height": 2650,
+    "width": 2000
   },
+
+  "crop_to_fit": {
+    "_description": "When both width and height are specified, crop the image symmetrically to match the target aspect ratio before resizing. If false, the image will be stretched/squashed to fit.",
+    "enabled": true
+  },
+
   "min_region_size_in_mm": 500,
 
   "compactness_passes": [
