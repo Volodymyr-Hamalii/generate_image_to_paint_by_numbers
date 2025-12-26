@@ -185,7 +185,13 @@ def main() -> None:
         end_time = time.time()
         processing_time_seconds = end_time - start_time
         processing_time_minutes = processing_time_seconds / 60
-        logger.info(f"# Image {image_path.name} processing completed in {processing_time_minutes:.2f} minutes.")
+
+        msg = f"# Image {image_path.name} processing completed in {processing_time_minutes:.2f} minutes"
+        if processing_time_minutes > 60:
+            processing_time_hours = processing_time_minutes / 60
+            msg += f" ({processing_time_hours:.2f} hours)"
+
+        logger.info(msg)
 
 
 if __name__ == '__main__':
