@@ -4,6 +4,7 @@ Module for converting color-reduced images to paint-by-numbers templates.
 
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
+from scipy.ndimage import distance_transform_edt
 
 from utils.logger import logger
 from parameters_reader import ParametersBorder, ParametersNumbers
@@ -52,7 +53,7 @@ def _find_label_center(region: set[tuple[int, int]], border: np.ndarray, width: 
     """
     Find the best position to place a label in a region.
 
-    Uses a distance transform approach to find the pixel that is farthest from any border,
+    Uses scipy's distance transform to efficiently find the pixel that is farthest from any border,
     ensuring the label is always well inside the region even for non-convex shapes.
 
     Args:
@@ -64,38 +65,40 @@ def _find_label_center(region: set[tuple[int, int]], border: np.ndarray, width: 
     Returns:
         (x, y) coordinate for label placement
     """
-    # Filter out border pixels to get interior pixels
-    interior_pixels = [(x, y) for x, y in region if border[y, x] == 0]
-
-    if not interior_pixels:
-        # If no interior pixels, use any pixel from region
-        interior_pixels = list(region)
-
-    if not interior_pixels:
+    if not region:
         return (0, 0)
 
-    # Find border pixels in this region
-    border_pixels = [(x, y) for x, y in region if border[y, x] == 1]
+    # Find bounding box of the region to minimize computation area
+    region_list = list(region)
+    xs = [x for x, y in region_list]
+    ys = [y for x, y in region_list]
+    min_x, max_x = min(xs), max(xs)
+    min_y, max_y = min(ys), max(ys)
 
-    if not border_pixels:
-        # If no borders (shouldn't happen), fall back to centroid
-        centroid_x = sum(x for x, _ in interior_pixels) // len(interior_pixels)
-        centroid_y = sum(y for _, y in interior_pixels) // len(interior_pixels)
-        return min(interior_pixels,
-                  key=lambda p: (p[0] - centroid_x)**2 + (p[1] - centroid_y)**2)
+    # Create a binary mask for just the bounding box (much smaller than full image)
+    bbox_width = max_x - min_x + 1
+    bbox_height = max_y - min_y + 1
+    region_mask = np.zeros((bbox_height, bbox_width), dtype=bool)
 
-    # For each interior pixel, find minimum distance to any border pixel
-    # The pixel with maximum such distance is the "most inside" point
-    def min_distance_to_border(pixel: tuple[int, int]) -> float:
-        """Calculate minimum squared distance from pixel to any border pixel."""
-        px, py = pixel
-        return min((px - bx)**2 + (py - by)**2 for bx, by in border_pixels)
+    # Fill the mask with interior pixels only
+    for x, y in region_list:
+        if border[y, x] == 0:  # Only interior pixels
+            region_mask[y - min_y, x - min_x] = True
 
-    # Find the interior pixel farthest from any border
-    # This ensures the label is always well inside the region
-    best_pixel = max(interior_pixels, key=min_distance_to_border)
+    # If no interior pixels, fall back to any pixel in the region
+    if not region_mask.any():
+        return next(iter(region))
 
-    return best_pixel
+    # Use distance transform to find distance from each interior pixel to nearest border
+    # distance_transform_edt computes the exact Euclidean distance efficiently (C implementation)
+    distance_map = distance_transform_edt(region_mask)
+
+    # Find the pixel with maximum distance from border (pole of inaccessibility)
+    max_dist_idx = np.unravel_index(np.argmax(distance_map), distance_map.shape)
+    local_y, local_x = max_dist_idx
+
+    # Convert back to global coordinates
+    return (local_x + min_x, local_y + min_y)
 
 
 def generate_image_to_paint_by_numbers(
