@@ -50,7 +50,10 @@ def _create_border_image(regions: list[set[tuple[int, int]]], width: int, height
 
 def _find_label_center(region: set[tuple[int, int]], border: np.ndarray, width: int, height: int) -> tuple[int, int]:
     """
-    Find the best position to place a label in a region (as central as possible).
+    Find the best position to place a label in a region.
+
+    Uses a distance transform approach to find the pixel that is farthest from any border,
+    ensuring the label is always well inside the region even for non-convex shapes.
 
     Args:
         region: Set of (x, y) coordinates in the region
@@ -61,7 +64,7 @@ def _find_label_center(region: set[tuple[int, int]], border: np.ndarray, width: 
     Returns:
         (x, y) coordinate for label placement
     """
-    # Filter out border pixels
+    # Filter out border pixels to get interior pixels
     interior_pixels = [(x, y) for x, y in region if border[y, x] == 0]
 
     if not interior_pixels:
@@ -71,14 +74,26 @@ def _find_label_center(region: set[tuple[int, int]], border: np.ndarray, width: 
     if not interior_pixels:
         return (0, 0)
 
-    # Find the most central point using distance transform approach
-    # Calculate the centroid first
-    centroid_x = sum(x for x, y in interior_pixels) // len(interior_pixels)
-    centroid_y = sum(y for x, y in interior_pixels) // len(interior_pixels)
+    # Find border pixels in this region
+    border_pixels = [(x, y) for x, y in region if border[y, x] == 1]
 
-    # Find the closest interior pixel to the centroid
-    best_pixel = min(interior_pixels,
-                    key=lambda p: (p[0] - centroid_x)**2 + (p[1] - centroid_y)**2)
+    if not border_pixels:
+        # If no borders (shouldn't happen), fall back to centroid
+        centroid_x = sum(x for x, _ in interior_pixels) // len(interior_pixels)
+        centroid_y = sum(y for _, y in interior_pixels) // len(interior_pixels)
+        return min(interior_pixels,
+                  key=lambda p: (p[0] - centroid_x)**2 + (p[1] - centroid_y)**2)
+
+    # For each interior pixel, find minimum distance to any border pixel
+    # The pixel with maximum such distance is the "most inside" point
+    def min_distance_to_border(pixel: tuple[int, int]) -> float:
+        """Calculate minimum squared distance from pixel to any border pixel."""
+        px, py = pixel
+        return min((px - bx)**2 + (py - by)**2 for bx, by in border_pixels)
+
+    # Find the interior pixel farthest from any border
+    # This ensures the label is always well inside the region
+    best_pixel = max(interior_pixels, key=min_distance_to_border)
 
     return best_pixel
 
