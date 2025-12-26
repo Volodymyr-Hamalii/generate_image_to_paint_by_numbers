@@ -97,10 +97,18 @@ All processing parameters are defined in `parameters.json` and loaded through da
    - Added `get_dimensions()` method to calculate missing dimension from image aspect ratio
    - Maintains proportions when only one dimension is specified
 
-2. **Configurable Compactness Passes**:
+3. **Configurable Compactness Passes**:
    - Moved hardcoded compactness passes from `utils.py` to `parameters.json`
    - Added `ParametersCompactnessPass` dataclass
    - Allows multiple passes with different thresholds for progressive region merging
+
+4. **Improved Label Placement** (`to_paint_by_numbers.py`):
+   - Rewrote `_find_label_center()` to use scipy's distance transform (distance_transform_edt)
+   - Now finds the pixel farthest from any border (pole of inaccessibility)
+   - Fixes issue where labels were placed outside non-convex regions (e.g., crescent shapes)
+   - Guarantees labels are always well inside their regions, even for complex shapes
+   - Optimized with bounding box computation to process only relevant region area
+   - Added scipy dependency for efficient distance transform computation
 
 ## Code Style & Patterns
 
@@ -114,6 +122,7 @@ All processing parameters are defined in `parameters.json` and loaded through da
 
 - **Pillow**: Image processing and I/O
 - **NumPy**: Array operations for efficient pixel manipulation
+- **SciPy**: Optimized distance transform for label placement
 - Python 3.10+: Required for modern type hint syntax
 
 ## Performance Considerations

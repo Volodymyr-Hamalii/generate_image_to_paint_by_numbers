@@ -25,6 +25,7 @@ Then it generates a black & white template with numbered regions and borders:
 - Python 3.10 or higher
 - Pillow (PIL)
 - NumPy
+- SciPy
 
 (check requirements.txt)
 
