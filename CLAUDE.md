@@ -2,9 +2,10 @@
 
 ## Project Overview
 
-This is a Python-based tool that converts images into paint-by-numbers templates. The script takes input images and generates two outputs:
+This is a Python-based tool that converts images into paint-by-numbers templates. The script takes input images and generates three outputs:
 1. A color-optimized version of the image with a limited palette
 2. A black & white paint-by-numbers template with numbered regions and borders
+3. A color palette image showing all used colors with their corresponding numbers
 
 ## Architecture
 
@@ -24,6 +25,7 @@ This is a Python-based tool that converts images into paint-by-numbers templates
    - `in_optimal_colors.py`: K-means clustering for optimal color selection
    - `in_the_specific_colors.py`: Maps image to predefined color palette
    - `to_paint_by_numbers.py`: Generates the final paint-by-numbers template
+   - `get_color_palette.py`: Generates color palette image with numbered swatches
    - `utils.py`: Shared utilities for region segmentation and merging
 
 4. **`utils/`**: Common utilities
@@ -63,9 +65,13 @@ Region Merging (size + compactness)
     ↓
 Color-Optimized Image Output
     ↓
-Template Generation (borders + numbers)
-    ↓
-Paint-by-Numbers Template Output
+├── Color Palette Generation (numbered swatches)
+│       ↓
+│   Color Palette Output
+│
+└── Template Generation (borders + numbers)
+        ↓
+    Paint-by-Numbers Template Output
 ```
 
 ## Configuration System
@@ -81,6 +87,16 @@ All processing parameters are defined in `parameters.json` and loaded through da
 - **Border & Numbers**: Visual styling for the template
 
 ## Recent Changes
+
+### April 2025
+
+1. **Color Palette Generation** (`generate_image/get_color_palette.py`):
+   - Added new module to generate color palette images
+   - Extracts only the colors actually used in the processed image (not all allowed colors)
+   - Numbers match the paint-by-numbers template (same scan order)
+   - Automatically adjusts text color (black/white) based on swatch brightness
+   - Configurable swatch size, columns, padding, and font size
+   - Output saved as `color_palette.png` alongside other outputs
 
 ### December 2024
 
@@ -176,6 +192,5 @@ All processing parameters are defined in `parameters.json` and loaded through da
 
 - Parallel processing for multiple images
 - Interactive parameter tuning UI
-- Color palette export (mapping numbers to paint colors)
 - SVG output for scalable templates
 - Advanced region merging strategies (e.g., semantic awareness)

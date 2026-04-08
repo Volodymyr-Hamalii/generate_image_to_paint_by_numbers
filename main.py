@@ -18,6 +18,7 @@ from parameters_reader import read_parameters, Parameters
 from generate_image.to_paint_by_numbers import generate_image_to_paint_by_numbers
 from generate_image.in_the_specific_colors import generate_image_in_the_specific_colors
 from generate_image.in_optimal_colors import generate_image_in_optimal_colors
+from generate_image.get_color_palette import generate_color_palette_image
 
 
 def get_output_dir(file_name: str) -> Path:
@@ -90,6 +91,11 @@ def main() -> None:
         logger.info("Image in the colors generated. Saving...")
         output_dir.mkdir(parents=True, exist_ok=True)
         save_image(image_in_specific_colors, output_dir, file_name + "_in_colors.png")
+
+        # Generate and save color palette
+        logger.info("Generating color palette...")
+        color_palette = generate_color_palette_image(image_in_specific_colors)
+        save_image(color_palette, output_dir, "color_palette.png")
 
         logger.info("Generating image to paint by the numbers...")
         image_to_paint_by_numbers: Image.Image = generate_image_to_paint_by_numbers(
